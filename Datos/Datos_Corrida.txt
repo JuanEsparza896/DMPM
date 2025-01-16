@@ -1,0 +1,12 @@
+10000 nc
+10 ncp
+0.001 dt
+2.0 temp
+2.7 v0
+3.5 rc
+0.65 dens
+1 potencial
+32 hilosPP
+1 ovec
+1 ocel
+0 vibrante

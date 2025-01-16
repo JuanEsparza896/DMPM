@@ -69,26 +69,20 @@ int main()
     VelocidadesInicialesalAzar(v0,v,np,nd);
     /*******************************************************************************************************************/
     double rbuf=0.5;
+    ArchivosDeResultados(dpsco,ofasres,ofasat,opt);
     switch(opt)
     {
         case 0:
-        printf("\nNo se usan optimizaciones\n");
-        ArchivosDeResultados(dpsco,ofasres,ofasat,"SinOptimizaciones");
+        
         Simulacion(np,nd,p,v,a,sig,eps,caja,dcajai,condper,temp,ofasres,ofasat,nc,dt,dens,ncp,nhilos,pot,maxhilos,memoria_global);
         break;
         case 1:
-        printf("\nOptimizaciones: Vecinos\n");
-        ArchivosDeResultados(dpsco,ofasres,ofasat,"Vecinos");
         SimulacionV(np,nd,p,v,a,sig,eps,caja,dcajai,condper,temp,ofasres,ofasat,nc,dt,dens,ncp,rc,rbuf,nhilos,pot,maxhilos,memoria_global);
         break;
         case 2:
-        printf("\nOptimizaciones: Celdas\n");
-        ArchivosDeResultados(dpsco,ofasres,ofasat,"Celdas");
         SimulacionC(np,nd,p,v,a,sig,eps,caja,dcajai,condper,temp,ofasres,ofasat,nc,dt,dens,ncp,rc,rbuf,nhilos,pot,maxhilos,memoria_global);
         break;
         case 3:
-        printf("\nOptimizaciones: Vecinosy Celdas\n");
-        ArchivosDeResultados(dpsco,ofasres,ofasat,"Vecinos_Celdas");
         SimulacionVYC(np,nd,p,v,a,sig,eps,caja,dcajai,condper,temp,ofasres,ofasat,nc,dt,dens,ncp,rc,rbuf,nhilos,pot,maxhilos,memoria_global);
         break;
     }

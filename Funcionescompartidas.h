@@ -50,10 +50,19 @@ void IAaD(int np,std::ofstream &ofasat,double *p,double *v,double *a,int nd)
     }
 }
 
-void ArchivosDeResultados(str dpsco,std::ofstream &ofasres,std::ofstream &ofasat,str op)
+void ArchivosDeResultados(str dpsco,std::ofstream &ofasres,std::ofstream &ofasat,int op)
 {
-    str asat = dpsco + "/Posiciones"+op+".txt";
-    str asres = dpsco + "/Res"+op+".txt";
+    str k;
+    switch(op)
+    {
+        case 0: k="SinOptimizaciones";break;
+        case 1: k="Vecinos";break;
+        case 2: k="Celdas";break;
+        case 3: k="AmbasOptimizaciones";break;
+    }
+    std::cout << "Optimizacion: " << k << std::endl;
+    str asat = dpsco + "/Posiciones_"+k+".txt";
+    str asres = dpsco + "/Resultados_"+k+".txt";
 
     ofasat.open(asat.c_str());
     ofasres.open(asres.c_str());

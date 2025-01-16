@@ -10,12 +10,37 @@ using str=std::string;
 #define PAbrioArchivo(arch,farch) if(!farch){std::cout<<"error al abrir archivo "<<arch<<std::endl;exit(EXIT_FAILURE);}
 #define POTLJ 1
 #define POTYK 2
-/*
-Definicion de las variables
-dens densidad del sistema inicial
-nd numero de dimensiones de la caja de simulacion
-np numero de particulas fisicas
-*/
+
+void LeerDatosSistema1(str dir,uint &n_esp_m,uint &n_esp_p)
+{
+    str f=dir+"/Datos/Datos_Sistema.txt";
+    str temp;
+    std::ifstream iff(f);
+    PAbrioArchivo(f,iff);
+    iff >> n_esp_m; iff >> temp;
+    iff >> n_esp_p; iff >> temp;
+    
+}
+void LeerDatosSistema2(str dir,uint n_esp_m,uint n_esp_p,uint *n_m_esp_mr,uint *n_p_esp_m,uint &np)
+{
+    str f=dir+"/Datos/Datos_Sistema.txt";
+    str temp;
+    uint imp;
+    std::ifstream iff(f);
+    PAbrioArchivo(f,iff);
+    iff >> imp; iff >> temp;
+    iff >> imp; iff >> temp;
+    np=0;
+    for(int i=0;i< n_esp_m;i++){
+        iff >> imp; iff >> temp;
+        n_m_esp_mr[i]=imp;
+    }
+    for(int i=0;i< n_esp_m;i++){
+        iff >> imp; iff >> temp;
+        n_p_esp_m[i]=imp;
+        np+=n_m_esp_mr[i]*imp;
+    }
+}
 void LeerArchivosIniciales(str dir,double &dens,int &nd,uint &np)
 {
     str f=dir+"/Datos/DatosIniciales.txt";
@@ -36,11 +61,12 @@ temp temperatura del sistema en caso de usar NVT
 v0 maximo de rapidez inicial de las particulas
 rc a partir de que distancia se hacen las interacciones no se consideran
 */
-void LeerDatosCorrida(str dir,uint &nc,uint &ncp,double &dt,double &temp,double &v0,double &rc,int &pot,int &cvec,int &ccel,int &nhilos)
+void LeerDatosCorrida(str dir,uint &nc,uint &ncp,double &dt,double &temp,double &v0,double &rc,double &dens,int &pot,int &cvec,int &ccel,int &nhilos,bool &vibrante)
 {
-    str f=dir+"/Datos/DatosCorrida.txt";
+    str f=dir+"/Datos/Datos_Corrida.txt";
     str tp;
     std::ifstream iff(f);
+    uint tmp;
     PAbrioArchivo(f,iff);
     iff >> nc; iff >> tp;
     iff >> ncp; iff >> tp;
@@ -48,19 +74,23 @@ void LeerDatosCorrida(str dir,uint &nc,uint &ncp,double &dt,double &temp,double 
     iff >> temp; iff >> tp;
     iff >> v0; iff >> tp;
     iff >> rc; iff >> tp;
+    iff >> dens; iff >> tp;
     iff >> pot; iff >> tp;
+    iff >> nhilos; iff >> tp;
     iff >> cvec; iff >> tp;
     iff >> ccel; iff >> tp;
     iff >> nhilos; iff >> tp;
+    iff >> tmp; iff >> tp;
+    if(tmp)vibrante=true; 
     iff.close();
 }
 /*
 Definicion de las variables
 sig,eps son parametros para el potencial de Lennard-Jones
 */
-void LeerDatosLJ(str dir,double &eps,double &sig)
+void LeerDatosAtomos(str dir,double &eps,double &sig)
 {
-    str f=dir+"/Datos/DatosPot.txt";
+    str f=dir+"/Datos/Datos_Interaccion.txt";
     str tp;
     std::ifstream iff(f);
     PAbrioArchivo(f,iff);
@@ -205,7 +235,7 @@ void LeerDatos(str dir,double &dens,int &nd,uint &np,uint &nc,uint &ncp,double &
 {
     int cvec=0,ccel=0;
     LeerArchivosIniciales(dir,dens,nd,np);
-    LeerDatosCorrida(dir,nc,ncp,dt,temp,v0,rc,pot,cvec,ccel,nhilos);
+    LeerDatosCorrida(dir,nc,ncp,dt,temp,v0,rc,dens,pot,cvec,ccel,nhilos,vibrante);
     opt=cvec+2*ccel;
     switch (pot)
     {
