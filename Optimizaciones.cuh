@@ -8,7 +8,7 @@
 /**************************************************************************************************************************************************/
 //Vecinos
 
-int CuantosVecCaben(double rc,double sig,double dens,int np)
+int CuantosVecCaben(double rc,double sig,double dens,uint np)
 {
     double rcc=rc+sig;
     /*
@@ -31,7 +31,7 @@ int CuantosVecCaben(double rc,double sig,double dens,int np)
     return nmaxvec;
 }
 
-__global__ void CalculoDeVecinos(int np,int chp,const double *p, int *vecinos, unsigned int *n_vecinos, int nmaxvec,int3 condper, double3 caja,double3 cajai,double rc)
+__global__ void CalculoDeVecinos(uint np,int chp,const double *p, int *vecinos, unsigned int *n_vecinos, int nmaxvec,int3 condper, double3 caja,double3 cajai,double rc)
 {
     int particula = threadIdx.x+blockIdx.x*blockDim.x;
     particula/=chp;
@@ -185,7 +185,7 @@ void CalculoDeCeldasVecinas(double3 caja,int *veccel,short dc,int nveccel)
     }
 }
 
-__global__ void CalculoCeldas(int np,int nmax_particulas_en_celda,uint *num_particulas_en_celda,int *particulas_en_celda,double *p,double3 invtamcel,double3 caja, int nceldas)
+__global__ void CalculoCeldas(uint np,int nmax_particulas_en_celda,uint *num_particulas_en_celda,int *particulas_en_celda,double *p,double3 invtamcel,double3 caja, int nceldas)
 {
     int gid=threadIdx.x+blockDim.x*blockIdx.x;
     if(gid>=np)return;
@@ -211,7 +211,7 @@ __global__ void CalculoCeldas(int np,int nmax_particulas_en_celda,uint *num_part
 /**************************************************************************************************************************************************/
 //Mezcla
 
-__global__ void CalculoDeVecinosConCeldas(int np,int chp,int nmaxvec,int nmax_particulas_en_celda,int *vecinos,int *particulas_en_celda,
+__global__ void CalculoDeVecinosConCeldas(uint np,int chp,int nmaxvec,int nmax_particulas_en_celda,int *vecinos,int *particulas_en_celda,
                                           uint *num_particulas_en_celda,uint *n_vecinos,int3 condper,double3 caja,
                                           double3 cajai,const double *p,double rc,int nveccel,int *veccel, double3 invtamcel)
 {

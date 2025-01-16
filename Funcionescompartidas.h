@@ -20,7 +20,7 @@ __host__ __device__ inline double Discuad(double3 var)
     return (var.x*var.x+var.y*var.y+var.z*var.z);
 }
 
-double CalculoEnergiaCinetica(int nd,int np,double *v)
+double CalculoEnergiaCinetica(int nd,uint np,double *v)
 {
     double ec=0.0;
     for(int ip=0; ip<np; ip++)
@@ -84,7 +84,7 @@ __global__ void Reduccionconwarps(double *arr,int nelementos,bool energia)
     if(!gid)arr[0]=suma;
 }
 
-__global__ void KernelPosiciones(int np,double *p,double *v,double *a, double dt,double3 caja,double3 cajai,int3 condper)
+__global__ void KernelPosiciones(uint np,double *p,double *v,double *a, double dt,double3 caja,double3 cajai,int3 condper)
 {
     int ip=threadIdx.x+blockDim.x*blockIdx.x;
     double pix(0.0),piy(0.0),piz(0.0),vix(0.0),viy(0.0),viz(0.0),aix(0.0),aiy(0.0),aiz(0.0);
@@ -106,7 +106,7 @@ __global__ void KernelPosiciones(int np,double *p,double *v,double *a, double dt
     p[ip*3+2]-=(condper.z)?rint(p[ip*3+2]*cajai.z)*caja.z:0;
 }
 
-__global__ void KernelVelocidades(int np,double *v,double *a, double dt,double3 caja,double3 cajai,int3 condper)
+__global__ void KernelVelocidades(uint np,double *v,double *a, double dt,double3 caja,double3 cajai,int3 condper)
 {
     int ip=threadIdx.x+blockDim.x*blockIdx.x;
     double vix(0.0),viy(0.0),viz(0.0),aix(0.0),aiy(0.0),aiz(0.0);

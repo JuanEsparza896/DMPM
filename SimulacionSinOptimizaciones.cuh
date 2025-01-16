@@ -9,7 +9,7 @@
 #include "Potenciales.h"
 #include "Funcionescompartidas.h"
 
-__global__ void AceleracionesfFuerzasLJ(int np,const double *p,int chp,double *param,double3 caja,double3 cajai,int3 condper,double *epot,double *a,bool nconf)
+__global__ void AceleracionesfFuerzasLJ(uint np,const double *p,int chp,double *param,double3 caja,double3 cajai,int3 condper,double *epot,double *a,bool nconf)
 {
     int gid=threadIdx.x+blockDim.x*blockIdx.x;
     gid/=chp;
@@ -72,9 +72,9 @@ __global__ void AceleracionesfFuerzasLJ(int np,const double *p,int chp,double *p
     
 }
 
-void Simulacion(int np,int nd,double *p,double *v,double *a,double sig,double eps,
+void Simulacion(uint np,int nd,double *p,double *v,double *a,double sig,double eps,
                 double3 caja,double3 cajai,int3 condper,double temp,std::ofstream &ofasres,
-                std::ofstream &ofasat,int nc,double dt,double dens,int ncp,int nhilos,int pot,int maxhilos,size_t memoria_global)
+                std::ofstream &ofasat,uint nc,double dt,double dens,uint ncp,int nhilos,int pot,int maxhilos,size_t memoria_global)
 {
     int ncc=nc*ncp/100.0;
     clock_t ti, tf;

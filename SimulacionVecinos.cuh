@@ -7,7 +7,7 @@
 #include "Potenciales.h"
 #include "Optimizaciones.cuh"
 
-__global__ void AceleracionesfFuerzasLJV(int np,const double *p,int chp,double *param,double3 caja,double3 cajai,int3 condper,double *epot,double *a,int *vec,unsigned int *nvec,int nmaxvec,double rc,bool nconf)
+__global__ void AceleracionesfFuerzasLJV(uint np,const double *p,int chp,double *param,double3 caja,double3 cajai,int3 condper,double *epot,double *a,int *vec,unsigned int *nvec,int nmaxvec,double rc,bool nconf)
 {
     int gid=threadIdx.x+blockDim.x*blockIdx.x;
     gid/=chp;
@@ -74,9 +74,9 @@ __global__ void AceleracionesfFuerzasLJV(int np,const double *p,int chp,double *
     
 }
 
-void SimulacionV(int np,int nd,double *p,double *v,double *a,double sig,double eps,double3 caja,
+void SimulacionV(uint np,int nd,double *p,double *v,double *a,double sig,double eps,double3 caja,
                  double3 cajai,int3 condper,double temp,std::ofstream &ofasres,std::ofstream &ofasat,
-                 int nc,double dt,double dens,int ncp,double rc,double rbuf,int nhilos,int pot,int maxhilos,size_t memoria_global)
+                 uint nc,double dt,double dens,uint ncp,double rc,double rbuf,int nhilos,int pot,int maxhilos,size_t memoria_global)
 {
     double rcc=rc+rbuf;
     int ncc=nc*ncp/100.0;

@@ -1,7 +1,7 @@
 #ifndef HILOSYBLOQUES_HEADER
 #define HILOSYBLOQUES_HEADER
 //En esta version lo que hacemos es que el numero de hilos en un bloque se balancee con el numero de bloques, dificilmente usamos los 1024 hilos por bloque
-void HilosenBloqueMultiplodeWarp(int np, int &hpp,int &blockspergrid,int &threadsperblock,int minbpg,int maxtpb,int wz=32)
+void HilosenBloqueMultiplodeWarp(uint np, int &hpp,int &blockspergrid,int &threadsperblock,int minbpg,int maxtpb,int wz=32)
 {
     if(np<hpp)hpp=np;//casi nunca pasa a menos que hagamos 31 particulas o menos 
     int hilos_totales=np*hpp;

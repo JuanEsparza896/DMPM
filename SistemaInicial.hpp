@@ -16,7 +16,7 @@ dens densidad del sistema inicial
 nd numero de dimensiones de la caja de simulacion
 np numero de particulas fisicas
 */
-void LeerArchivosIniciales(str dir,double &dens,int &nd,int &np)
+void LeerArchivosIniciales(str dir,double &dens,int &nd,uint &np)
 {
     str f=dir+"/Datos/DatosIniciales.txt";
     str temp;
@@ -36,7 +36,7 @@ temp temperatura del sistema en caso de usar NVT
 v0 maximo de rapidez inicial de las particulas
 rc a partir de que distancia se hacen las interacciones no se consideran
 */
-void LeerDatosCorrida(str dir,int &nc,int &ncp,double &dt,double &temp,double &v0,double &rc,int &pot,int &cvec,int &ccel,int &nhilos)
+void LeerDatosCorrida(str dir,uint &nc,uint &ncp,double &dt,double &temp,double &v0,double &rc,int &pot,int &cvec,int &ccel,int &nhilos)
 {
     str f=dir+"/Datos/DatosCorrida.txt";
     str tp;
@@ -69,7 +69,7 @@ void LeerDatosLJ(str dir,double &eps,double &sig)
     iff.close();
 }
 
-void AbrirArchivos(str dir,str &dpsco,double dens,int nd,int np,int pot,double param1,double param2,std::ofstream &ofaedi,std::ofstream &ofapin)
+void AbrirArchivos(str dir,str &dpsco,double dens,int nd,uint np,int pot,double param1,double param2,std::ofstream &ofaedi,std::ofstream &ofapin)
 {
     //Creando Carpetas y abriendo archivos para escribir en ellos 
     str dpsc1 = dir + "/Corridas";
@@ -100,7 +100,7 @@ void AbrirArchivos(str dir,str &dpsco,double dens,int nd,int np,int pot,double p
     ofapin.open(apin.c_str());
 }
 
-void Cuadrada(int np,int nd,double sig,double &cajax,double &cajay,double &cajaz,double dens,std::ofstream &ofapin,double *p)
+void Cuadrada(uint np,int nd,double sig,double3 &caja,double dens,std::ofstream &ofapin,double *p)
 {
     //configuracion inicial cuadrada
     int ndivx=0,ndivy=0,ndivz=0;
@@ -124,23 +124,23 @@ void Cuadrada(int np,int nd,double sig,double &cajax,double &cajay,double &cajaz
     else{
         ndivz=1;
     }
-    cajax = ndivx*celx;
-    cajay = ndivy*cely;
-    cajaz = ndivz*celz;
+    caja.x = ndivx*celx;
+    caja.y = ndivy*cely;
+    caja.z = ndivz*celz;
     double di=0.0;
     di=pow(dens,1.0/nd);
-    cajax/=di;
-    cajay/=di;
-    cajaz/=di;
-    celx=cajax/ndivx;
-    cely=cajay/ndivy;
-    celz=cajaz/ndivz;
+    caja.x/=di;
+    caja.y/=di;
+    caja.z/=di;
+    celx=caja.x/ndivx;
+    cely=caja.y/ndivy;
+    celz=caja.z/ndivz;
 
-    std::cout <<"\ndimensiones de la caja: (" << cajax <<","<< cajay<<","<< cajaz <<")"<< std::endl;
+    std::cout <<"\ndimensiones de la caja: (" << caja.x <<","<< caja.y<<","<< caja.z <<")"<< std::endl;
     switch(nd){
-        case 2: std::cout << "tamano de la caja: " << cajax*cajay << std::endl;
+        case 2: std::cout << "tamano de la caja: " << caja.x*caja.y << std::endl;
         break;
-        case 3: std::cout << "tamano de la caja: " << cajax*cajay*cajaz << std::endl;
+        case 3: std::cout << "tamano de la caja: " << caja.x*caja.y*caja.z << std::endl;
         break;
     }
     ofapin <<"ip"<< "\t\t" << "px:" << "\t\t" << "py:" << "\t\t" << "pz:" << std::endl;
@@ -163,7 +163,7 @@ void Cuadrada(int np,int nd,double sig,double &cajax,double &cajay,double &cajaz
     }
 }
 
-void ImprimirDatos(double dens,int nd, int np, int pot,double param1, double param2,double cajax,double cajay,double cajaz,int nc,int ncp,double dt,double rc,std::ofstream &ofaedi)
+void ImprimirDatos(double dens,int nd, uint np, int pot,double param1, double param2,double3 caja,int nc,uint ncp,double dt,double rc,std::ofstream &ofaedi)
 {
     std::cout << "\nPROPIEDADES DEL SISTEMA\n";
     ofaedi << "\nPROPIEDADES DEL SISTEMA\n";
@@ -197,11 +197,11 @@ void ImprimirDatos(double dens,int nd, int np, int pot,double param1, double par
     case POTYK:
         break;
     }
-    ofaedi << "Dimensiones de la caja de simulacion: ("<< cajax<<","<< cajay<<","<< cajaz<<")\n";
+    ofaedi << "Dimensiones de la caja de simulacion: ("<< caja.x<<","<< caja.y<<","<< caja.z<<")\n";
     std::cout << "-----------------------------------------------\n";
     ofaedi << "-----------------------------------------------\n";
 }
-void LeerDatos(str dir,double &dens,int &nd,int &np,int &nc,int &ncp,double &dt,double &temp,double &v0,double &rc,int &pot,double &eps,double &sig,str &dpsco,std::ofstream &ofaedi,std::ofstream &ofapin,int &opt,int &nhilos)
+void LeerDatos(str dir,double &dens,int &nd,uint &np,uint &nc,uint &ncp,double &dt,double &temp,double &v0,double &rc,int &pot,double &eps,double &sig,str &dpsco,std::ofstream &ofaedi,std::ofstream &ofapin,int &opt,int &nhilos)
 {
     int cvec=0,ccel=0;
     LeerArchivosIniciales(dir,dens,nd,np);

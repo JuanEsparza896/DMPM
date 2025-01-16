@@ -9,27 +9,63 @@
 
 int main()
 {
-    std::string dir="/home/gach/DMP2";
-    str dpsco;
-    int3 condper=InitDataType3<int3>(1,1,1);
-    double dens,dt,temp,v0,rc,eps,sig,cajax,cajay,cajaz;
-    int nd,np,nc,ncp,pot,opt,nhilos;
+    /***********************************************************************/
+    //Datos del programa
+    std::string dir;        //directorio base
+    str dpsco;              //directorio de resultados
+    std::ofstream ofaedi;   //archivo de salida de datos iniciales
+    std::ofstream ofapin;   //archivo de salida de posiciones Iniciales
+    std::ofstream ofasres;  //archivo de salida de resultados
+    std::ofstream ofasat;   //archivo de salida de posiciones de los atomos
+    int maxhilos;           //numero maximo de hilos
+    size_t memoria_global;  //memoria global disponible
+    /***********************************************************************/
+    //Datos de la corrida
+
+    int3 condper;           //Condiciones de periodicidad
+    int opt;                //optimizaciones vecinos, celdas o ambos
+    int nhilos;             //cuantos hilos se encargan de realizar los 
+                            //calculos para una particula
+    uint nc;                //numero de configuraciones
+    uint ncp;               //porcentaje de nc para el cual se calculan props
+    double rc;              //radio de corte
+    double dt;              //tamaño del paso de integracion
+    /***********************************************************************/
+    //Datos del sistema
+    
+    double dens;            //densidad
+    double temp;            //caso NVT temperatura del baño
+    double v0;              //rapidez maxima inicial de las particulas
+    double3 caja;           //tamano de la caja de simulacion
+    int nd;                 //dimension en la que se trabaja
+    /***********************************************************************/
+    //Datos de atomos
+
+    uint np;
+    //pot ya no sirve, ahora necesitamos la matriz de interacciones
+    //np necesita no ser dato en el documento de texto, viene de 
+    //eps y sig varian dependiendo de la especie atomica 
+    int pot;
     double *p,*v,*a;
-    std::ofstream ofaedi,ofapin,ofasres,ofasat;
-    int maxhilos;
-    size_t memoria_global;
-    PropiedadesGPU(maxhilos,memoria_global);
+    double eps,sig;
+    
+    
+    
+
+
 
     //Inicializacion del sistema
     /*******************************************************************************************************************/
+    dir="/home/gach/DMPM";
+    condper=InitDataType3<int3>(1,1,1);
+    PropiedadesGPU(maxhilos,memoria_global);
     LeerDatos(dir,dens,nd,np,nc,ncp,dt,temp,v0,rc,pot,eps,sig,dpsco,ofaedi,ofapin,opt,nhilos);
     p=new double[np*nd];
     v=new double[np*nd];
     a=new double[np*nd];
-    Cuadrada(np,nd,sig,cajax,cajay,cajaz,dens,ofapin,p);
-    double3 dcaja=InitDataType3<double3>(cajax,cajay,cajaz);
-    double3 dcajai=InvDataType3<double3>(dcaja);
-    ImprimirDatos(dens,nd,np,pot,sig,eps,cajax,cajay,cajaz,nc,ncp,dt,rc,ofaedi);
+    Cuadrada(np,nd,sig,caja,dens,ofapin,p);
+    double3 dcajai=InvDataType3<double3>(caja);
+    ImprimirDatos(dens,nd,np,pot,sig,eps,caja,nc,ncp,dt,rc,ofaedi);
     VelocidadesInicialesalAzar(v0,v,np,nd);
     /*******************************************************************************************************************/
     double rbuf=0.5;
@@ -38,22 +74,22 @@ int main()
         case 0:
         printf("\nNo se usan optimizaciones\n");
         ArchivosDeResultados(dpsco,ofasres,ofasat,"SinOptimizaciones");
-        Simulacion(np,nd,p,v,a,sig,eps,dcaja,dcajai,condper,temp,ofasres,ofasat,nc,dt,dens,ncp,nhilos,pot,maxhilos,memoria_global);
+        Simulacion(np,nd,p,v,a,sig,eps,caja,dcajai,condper,temp,ofasres,ofasat,nc,dt,dens,ncp,nhilos,pot,maxhilos,memoria_global);
         break;
         case 1:
         printf("\nOptimizaciones: Vecinos\n");
         ArchivosDeResultados(dpsco,ofasres,ofasat,"Vecinos");
-        SimulacionV(np,nd,p,v,a,sig,eps,dcaja,dcajai,condper,temp,ofasres,ofasat,nc,dt,dens,ncp,rc,rbuf,nhilos,pot,maxhilos,memoria_global);
+        SimulacionV(np,nd,p,v,a,sig,eps,caja,dcajai,condper,temp,ofasres,ofasat,nc,dt,dens,ncp,rc,rbuf,nhilos,pot,maxhilos,memoria_global);
         break;
         case 2:
         printf("\nOptimizaciones: Celdas\n");
         ArchivosDeResultados(dpsco,ofasres,ofasat,"Celdas");
-        SimulacionC(np,nd,p,v,a,sig,eps,dcaja,dcajai,condper,temp,ofasres,ofasat,nc,dt,dens,ncp,rc,rbuf,nhilos,pot,maxhilos,memoria_global);
+        SimulacionC(np,nd,p,v,a,sig,eps,caja,dcajai,condper,temp,ofasres,ofasat,nc,dt,dens,ncp,rc,rbuf,nhilos,pot,maxhilos,memoria_global);
         break;
         case 3:
         printf("\nOptimizaciones: Vecinosy Celdas\n");
         ArchivosDeResultados(dpsco,ofasres,ofasat,"Vecinos_Celdas");
-        SimulacionVYC(np,nd,p,v,a,sig,eps,dcaja,dcajai,condper,temp,ofasres,ofasat,nc,dt,dens,ncp,rc,rbuf,nhilos,pot,maxhilos,memoria_global);
+        SimulacionVYC(np,nd,p,v,a,sig,eps,caja,dcajai,condper,temp,ofasres,ofasat,nc,dt,dens,ncp,rc,rbuf,nhilos,pot,maxhilos,memoria_global);
         break;
     }
     delete[] p;

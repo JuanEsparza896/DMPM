@@ -8,7 +8,7 @@
 #include "Funcionescompartidas.h"
 #include "Optimizaciones.cuh"
 
-__global__ void AceleracionesfFuerzasLJC(int np,const double *p,int chp,double *param,double3 caja,double3 cajai,int3 condper,double *epot,
+__global__ void AceleracionesfFuerzasLJC(uint np,const double *p,int chp,double *param,double3 caja,double3 cajai,int3 condper,double *epot,
                                          double *a,int *particulas_en_celda,unsigned int *num_particulas_en_celda,int n_cel_vec,double rc,
                                          bool nconf, int *celdas_vecinas,int nmax_particulas_en_celda,int nparam,double3 invtamcel)
 {
@@ -90,9 +90,9 @@ __global__ void AceleracionesfFuerzasLJC(int np,const double *p,int chp,double *
     }
 }
 
-void SimulacionC(int np,int nd,double *p,double *v,double *a,double sig,double eps,double3 caja,
+void SimulacionC(uint np,int nd,double *p,double *v,double *a,double sig,double eps,double3 caja,
                  double3 cajai,int3 condper,double temp,std::ofstream &ofasres,std::ofstream &ofasat,
-                 int nc,double dt,double dens,int ncp,double rc,double rbuf,int nhilos,int pot,int maxhilos,size_t memoria_global)
+                 uint nc,double dt,double dens,uint ncp,double rc,double rbuf,int nhilos,int pot,int maxhilos,size_t memoria_global)
 {
     int ncc=nc*ncp/100.0;
     clock_t ti, tf;
