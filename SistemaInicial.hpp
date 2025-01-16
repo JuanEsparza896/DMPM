@@ -1,0 +1,236 @@
+#ifndef SIS_INICIAL_HEADER
+#define SIS_INICIAL_HEADER
+#include <string>
+#include <iostream>
+#include <fstream>
+#include <math.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+using str=std::string;
+#define PAbrioArchivo(arch,farch) if(!farch){std::cout<<"error al abrir archivo "<<arch<<std::endl;exit(EXIT_FAILURE);}
+#define POTLJ 1
+#define POTYK 2
+/*
+Definicion de las variables
+dens densidad del sistema inicial
+nd numero de dimensiones de la caja de simulacion
+np numero de particulas fisicas
+*/
+void LeerArchivosIniciales(str dir,double &dens,int &nd,int &np)
+{
+    str f=dir+"/Datos/DatosIniciales.txt";
+    str temp;
+    std::ifstream iff(f);
+    PAbrioArchivo(f,iff);
+    iff >> dens; iff >> temp;
+    iff >> nd; iff >> temp;
+    iff >> np; iff >> temp;
+    iff.close();
+}
+/*
+Definicion de las variables
+nc numero de configuraciones que se exploran
+ncp porcentaje de nc para el cual se imprimen  propiedades macroscopicas
+dt tamaño del paso de integracion
+temp temperatura del sistema en caso de usar NVT
+v0 maximo de rapidez inicial de las particulas
+rc a partir de que distancia se hacen las interacciones no se consideran
+*/
+void LeerDatosCorrida(str dir,int &nc,int &ncp,double &dt,double &temp,double &v0,double &rc,int &pot,int &cvec,int &ccel,int &nhilos)
+{
+    str f=dir+"/Datos/DatosCorrida.txt";
+    str tp;
+    std::ifstream iff(f);
+    PAbrioArchivo(f,iff);
+    iff >> nc; iff >> tp;
+    iff >> ncp; iff >> tp;
+    iff >> dt; iff >> tp;
+    iff >> temp; iff >> tp;
+    iff >> v0; iff >> tp;
+    iff >> rc; iff >> tp;
+    iff >> pot; iff >> tp;
+    iff >> cvec; iff >> tp;
+    iff >> ccel; iff >> tp;
+    iff >> nhilos; iff >> tp;
+    iff.close();
+}
+/*
+Definicion de las variables
+sig,eps son parametros para el potencial de Lennard-Jones
+*/
+void LeerDatosLJ(str dir,double &eps,double &sig)
+{
+    str f=dir+"/Datos/DatosPot.txt";
+    str tp;
+    std::ifstream iff(f);
+    PAbrioArchivo(f,iff);
+    iff >> eps; iff >> tp;
+    iff >> sig; iff >> tp;
+    iff.close();
+}
+
+void AbrirArchivos(str dir,str &dpsco,double dens,int nd,int np,int pot,double param1,double param2,std::ofstream &ofaedi,std::ofstream &ofapin)
+{
+    //Creando Carpetas y abriendo archivos para escribir en ellos 
+    str dpsc1 = dir + "/Corridas";
+    //creando el directorio de corridas
+    mkdir(dpsc1.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+    str dpsc = dpsc1 +"/dens_"+ std::to_string(dens) + "_nd_" + std::to_string(nd) + "_np_" + std::to_string(np);
+    
+    switch (pot)
+    {
+    case POTLJ:
+        dpsc+="_sig_"+ std::to_string(param1)+"_eps_"+ std::to_string(param2);
+        break;
+    case POTYK:
+        /* code */
+        break;
+
+    }
+    std::cout << "LOS ARCHIVOS DE ESTA CORRIDA SE GUARDAN EN: " << dpsc << std::endl;
+    //creando el directorio de psc
+    mkdir(dpsc.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+    dpsco = dpsc+"/Resultados";
+    mkdir(dpsco.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+
+    str aedi = dpsc + "/DatosIniciales.txt";
+    str apin = dpsc + "/PosIni.txt";
+
+    ofaedi.open(aedi.c_str());
+    ofapin.open(apin.c_str());
+}
+
+void Cuadrada(int np,int nd,double sig,double &cajax,double &cajay,double &cajaz,double dens,std::ofstream &ofapin,double *p)
+{
+    //configuracion inicial cuadrada
+    int ndivx=0,ndivy=0,ndivz=0;
+    int ndiv=pow(double(np),1.0/double(nd))+0.5;
+
+    double celx=sig,cely=sig,celz=sig;
+    double fcx=celx/2,fcy=cely/2,fcz=celz/2;
+    ndivx=ndiv;
+    int prod=0;
+    prod=np/ndivx;
+    int ndiv2=0;
+    ndiv2=pow(prod,1.0/(nd-1))+0.5;
+    ndivy=ndiv2;
+    if(nd>2){
+        prod=ndivx*ndivy;
+        ndivz=np/(ndivx*ndivy);
+        if(np%prod!=0){
+            ndivz++;
+        }
+    }
+    else{
+        ndivz=1;
+    }
+    cajax = ndivx*celx;
+    cajay = ndivy*cely;
+    cajaz = ndivz*celz;
+    double di=0.0;
+    di=pow(dens,1.0/nd);
+    cajax/=di;
+    cajay/=di;
+    cajaz/=di;
+    celx=cajax/ndivx;
+    cely=cajay/ndivy;
+    celz=cajaz/ndivz;
+
+    std::cout <<"\ndimensiones de la caja: (" << cajax <<","<< cajay<<","<< cajaz <<")"<< std::endl;
+    switch(nd){
+        case 2: std::cout << "tamano de la caja: " << cajax*cajay << std::endl;
+        break;
+        case 3: std::cout << "tamano de la caja: " << cajax*cajay*cajaz << std::endl;
+        break;
+    }
+    ofapin <<"ip"<< "\t\t" << "px:" << "\t\t" << "py:" << "\t\t" << "pz:" << std::endl;
+    int ip=0;
+    int x=0,y=0,z=0;
+    for(ip=0;ip<np;ip++){
+        if(x>=ndivx){
+            x=0;
+            y++;
+        }
+        if(y>=ndivy){
+            y=0;
+            z++;
+        }
+        p[nd*ip]=x*celx+fcx;
+        p[nd*ip+1]=y*cely+fcy;
+        p[nd*ip+2]=z*cely+fcz;
+        x++;
+        ofapin << ip << "\t\t" << p[nd*ip]<< "\t\t" <<p[1+nd*ip]<< "\t\t"<<p[2+nd*ip] << std::endl;
+    }
+}
+
+void ImprimirDatos(double dens,int nd, int np, int pot,double param1, double param2,double cajax,double cajay,double cajaz,int nc,int ncp,double dt,double rc,std::ofstream &ofaedi)
+{
+    std::cout << "\nPROPIEDADES DEL SISTEMA\n";
+    ofaedi << "\nPROPIEDADES DEL SISTEMA\n";
+    std::cout << "-----------------------------------------------\n";
+    ofaedi << "-----------------------------------------------\n";
+    std::cout << "Densidad: " << dens << std::endl;
+    ofaedi << "Densidad: " << dens << std::endl;
+    std::cout << "Dimensiones: " << nd << std::endl;
+    ofaedi << "Dimensiones: " << nd << std::endl;
+    std::cout << "Numero de atomos: " << np << std::endl;
+    ofaedi << "Numero de atomos: " << np << std::endl;
+    std::cout << "Numero de configuraciones: " <<nc<< std::endl;
+    ofaedi << "Numero de configuraciones: " <<nc<< std::endl;
+    std::cout << "Porcentaje de nc para el cual imprimimos propiedades macroscopicas: " << ncp << std::endl;
+    ofaedi << "Porcentaje de nc para el cual imprimimos propiedades macroscopicas: " << ncp << std::endl;
+    std::cout << "Paso de integracion: " <<dt<< std::endl;
+    ofaedi << "Paso de integracion: " <<dt<< std::endl;
+    std::cout << "radio de corte: " << rc << std::endl;
+    ofaedi << "radio de corte: " << rc << std::endl;
+    switch (pot)
+    {
+    case POTLJ:
+        std::cout << "Parametros del potencial de LJ" <<std::endl;
+        ofaedi << "Parametros del potencial de LJ" <<std::endl;
+        std::cout << "diametro: " << param1 << std::endl;
+        ofaedi << "diametro: " << param1 << std::endl;
+        std::cout << "profundidad del pozo de potencial: " << param2 << std::endl;
+        ofaedi << "profundidad del pozo de potencial: " << param2 << std::endl;
+        break;
+    
+    case POTYK:
+        break;
+    }
+    ofaedi << "Dimensiones de la caja de simulacion: ("<< cajax<<","<< cajay<<","<< cajaz<<")\n";
+    std::cout << "-----------------------------------------------\n";
+    ofaedi << "-----------------------------------------------\n";
+}
+void LeerDatos(str dir,double &dens,int &nd,int &np,int &nc,int &ncp,double &dt,double &temp,double &v0,double &rc,int &pot,double &eps,double &sig,str &dpsco,std::ofstream &ofaedi,std::ofstream &ofapin,int &opt,int &nhilos)
+{
+    int cvec=0,ccel=0;
+    LeerArchivosIniciales(dir,dens,nd,np);
+    LeerDatosCorrida(dir,nc,ncp,dt,temp,v0,rc,pot,cvec,ccel,nhilos);
+    opt=cvec+2*ccel;
+    switch (pot)
+    {
+    case POTLJ:
+        LeerDatosLJ(dir,eps,sig);
+        break;
+    
+    case POTYK:
+        break;
+    }
+    AbrirArchivos(dir,dpsco,dens,nd,np,pot,sig,eps,ofaedi,ofapin);
+}
+void VelocidadesInicialesalAzar(double v0,double *v,int np,int nd)
+{
+    //velocidades Iniciales al azar
+    double r;
+    srand(1);
+      for(int ip=0; ip<np; ip++)
+      {
+          for(int id=0;id<nd;id++){
+            r=(rand() % 10000 /10000.)*2.0-1.0;
+            v[id+ip*nd] = v0*r;
+          }
+      }
+
+}
+
+#endif
