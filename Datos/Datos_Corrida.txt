@@ -10,3 +10,4 @@
 1 ovec
 1 ocel
 0 vibrante
+2 nparam

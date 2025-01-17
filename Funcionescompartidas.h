@@ -20,7 +20,7 @@ __host__ __device__ inline double Discuad(double3 var)
     return (var.x*var.x+var.y*var.y+var.z*var.z);
 }
 
-double CalculoEnergiaCinetica(int nd,uint np,double *v)
+double CalculoEnergiaCinetica(uint np,double *v)
 {
     double ec=0.0;
     for(int ip=0; ip<np; ip++)
@@ -30,14 +30,14 @@ double CalculoEnergiaCinetica(int nd,uint np,double *v)
     return(ec/np); 
 }
 
-void Velocidades(int np,int nd,double *v,double *a,double dt)
+void Velocidades(int np,double *v,double *a,double dt)
 {
     for(int ip=0; ip<np;ip++)
         for(int id=0;id<nd;id++)
             v[id+ip*nd] += a[id+ip*nd] * 0.5 * dt;
 }
 
-void IAaD(int np,std::ofstream &ofasat,double *p,double *v,double *a,int nd)
+void IAaD(int np,std::ofstream &ofasat,double *p,double *v,double *a)
 {    
     int ip;
     ofasat << std::endl;
@@ -50,23 +50,6 @@ void IAaD(int np,std::ofstream &ofasat,double *p,double *v,double *a,int nd)
     }
 }
 
-void ArchivosDeResultados(str dpsco,std::ofstream &ofasres,std::ofstream &ofasat,int op)
-{
-    str k;
-    switch(op)
-    {
-        case 0: k="SinOptimizaciones";break;
-        case 1: k="Vecinos";break;
-        case 2: k="Celdas";break;
-        case 3: k="AmbasOptimizaciones";break;
-    }
-    std::cout << "Optimizacion: " << k << std::endl;
-    str asat = dpsco + "/Posiciones_"+k+".txt";
-    str asres = dpsco + "/Resultados_"+k+".txt";
-
-    ofasat.open(asat.c_str());
-    ofasres.open(asres.c_str());
-}
 //para calculo de la energia
 template<int Numthreads>
 __global__ void Reduccionconwarps(double *arr,int nelementos,bool energia)

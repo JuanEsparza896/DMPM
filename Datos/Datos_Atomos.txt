@@ -1,3 +1,2 @@
-radios 1.0
-param_2	1.0
-etc
+radios parametros_extra
+1.0	1.0

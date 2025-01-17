@@ -4,6 +4,9 @@
 using str = std::string;
 #define MINBLOCKPERGRID 4
 #define FULL_MASK 0xffffffff
+#define nd 3
+#define LennardJones 1
+#define Yukawa 2
 //rama de memoria compartida
 /*
 Tipos de errores de cuda:
