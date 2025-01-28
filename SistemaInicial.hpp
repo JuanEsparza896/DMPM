@@ -379,13 +379,13 @@ void CentrarMoleculas(double *centrar_m,uint n_esp_m,uint *n_p_esp_m,
 void ConfiguracionCubica(uint n_esp_m,uint *m_de_esp_mr,uint *p_en_esp_mr,double *pos,
                          double3 *pos_respecto_p_central,uint max_p_en_esp_mr,double3 &caja,double *centrar_m,
                          double3 celda_minima,double densidad,std::ofstream &ofapin,uint *esp_de_p_en_m,
-                         uint nm,uint *esp_de_p)
+                         uint nm,uint *esp_de_p,uint *m_de_p)
 {
     /********************************************/
     int3 particulas_por_lado;
     double3 cel;
     uint *moleculas_de_especie_acumuladas;
-    int k=0,part=0,h=0;
+    int k=0,part=0;
     /********************************************/
     particulas_por_lado.x=pow(nm,1.0/nd)+0.5;
     particulas_por_lado.y=nm/particulas_por_lado.x;
@@ -426,16 +426,15 @@ void ConfiguracionCubica(uint n_esp_m,uint *m_de_esp_mr,uint *p_en_esp_mr,double
             y=0;
             z++;
         }
-        h=0;
         for(int j=0;j<p_en_esp_mr[k];j++){
             pos[part*nd]=x*cel.x+pos_respecto_p_central[max_p_en_esp_mr*k+j].x+centrar_m[nd*k];
             pos[part*nd+1]=y*cel.y+pos_respecto_p_central[max_p_en_esp_mr*k+j].y+centrar_m[nd*k+1];
             pos[part*nd+2]=z*cel.z+pos_respecto_p_central[max_p_en_esp_mr*k+j].z+centrar_m[nd*k+2];
             esp_de_p[part] = esp_de_p_en_m[k*max_p_en_esp_mr+j];
+            m_de_p[part]=i;
             ofapin << part << "\t" << i << "\t" << k << "\t" << esp_de_p_en_m[k*max_p_en_esp_mr+j]<<
             "\t" << pos[part*nd] << "\t" <<  pos[part*nd+1] << "\t" <<  pos[part*nd+2] << std::endl;
             part++;
-            h++;
         }
         x++;
         moleculas_de_especie_acumuladas[k]--;

@@ -58,6 +58,7 @@ int main()
     uint np;
     uint nparam;
     uint *esp_p;            //arreglo con especie de cada particula
+    uint *m_de_p;
     int pot;
     double *pos,*vel,*acel;
     double *param;
@@ -101,7 +102,8 @@ int main()
     double *centrar_m = new double[nd*n_esp_m];
     CentrarMoleculas(centrar_m,n_esp_m,n_p_esp_m,esp_p_en_esp_mr,max_p_en_esp_mr,nparam,param,pos_respecto_p_central);
     esp_p = new uint[np];
-    ConfiguracionCubica(n_esp_m,n_m_esp_mr,n_p_esp_m,pos,pos_respecto_p_central,max_p_en_esp_mr,caja,centrar_m,celda_min,dens,ofapin,esp_p_en_esp_mr,nm,esp_p);
+    m_de_p = new uint[np];
+    ConfiguracionCubica(n_esp_m,n_m_esp_mr,n_p_esp_m,pos,pos_respecto_p_central,max_p_en_esp_mr,caja,centrar_m,celda_min,dens,ofapin,esp_p_en_esp_mr,nm,esp_p,m_de_p);
     double3 dcajai=InvDataType3<double3>(caja);
     InicializarVelocidades(v0,vel,np);
     /*******************************************************************************************************************/
