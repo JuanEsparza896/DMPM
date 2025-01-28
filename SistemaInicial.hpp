@@ -254,7 +254,7 @@ void ImpresionDeDatosADisco(int nc,int ncp,double dt,double temp,double v0,doubl
     
 }
 
-void LeerDatos(str dir,double &dens,uint &np,uint &nc,uint &ncp,uint &n_esp_m,uint &n_esp_p,uint &n_param,uint *n_m_esp_mr,uint *n_p_esp_m,uint *esp_p_en_esp_mr,uint max_p_en_esp_mr,double &dt,double &temp,double &v0,double &rc,double *param,double3 *pos_respecto_p_central,int &pot,str &dpsco,std::ofstream &ofaedi,std::ofstream &ofascl,std::ofstream &ofapin,int &opt,int &nhilos,bool &vibrante)
+void LeerDatos(str dir,double &dens,uint &np,uint &nc,uint &ncp,uint &n_esp_m,uint &n_esp_p,uint &n_param,uint *n_m_esp_mr,uint *n_p_esp_m,uint *esp_p_en_esp_mr,uint max_p_en_esp_mr,uint *M_int,double &dt,double &temp,double &v0,double &rc,double *param,double3 *pos_respecto_p_central,int &pot,str &dpsco,std::ofstream &ofaedi,std::ofstream &ofascl,std::ofstream &ofapin,int &opt,int &nhilos,bool &vibrante)
 {
     int cvec=0,ccel=0;
     LeerDatosSistema1(dir,n_esp_m,n_esp_p);
@@ -263,6 +263,7 @@ void LeerDatos(str dir,double &dens,uint &np,uint &nc,uint &ncp,uint &n_esp_m,ui
     opt=cvec+2*ccel;
     LeerDatosAtomos(dir,param,n_param,n_esp_p);
     LeerDatosMoleculas(dir,n_esp_m,n_p_esp_m,esp_p_en_esp_mr,max_p_en_esp_mr,pos_respecto_p_central);
+    LeerDatosInteraccion(dir,n_esp_p,M_int);
     AbrirArchivos(dir,dens,n_esp_m,n_esp_p,n_m_esp_mr,n_param,param,ofaedi,ofapin,dpsco,ofascl);
 }
 void ArchivosDeResultados(str dpsco,std::ofstream &ofasres,std::ofstream &ofasat,int op)
