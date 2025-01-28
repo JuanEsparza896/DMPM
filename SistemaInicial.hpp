@@ -9,6 +9,7 @@
 #include <iomanip>
 #include <sstream>
 #include "Definiciones.cuh"
+#include "OperacionesTDatosCuda.cuh"
 using str=std::string;
 #define PAbrioArchivo(arch,farch) if(!farch){std::cout<<"error al abrir archivo "<<arch<<std::endl;exit(EXIT_FAILURE);}
 
@@ -22,7 +23,7 @@ void LeerDatosSistema1(str dir,uint &n_esp_m,uint &n_esp_p)
     iff >> n_esp_p; iff >> temp;
     iff.close();
 }
-void LeerDatosSistema2(str dir,uint n_esp_m,uint n_esp_p,uint *n_m_esp_mr,uint *n_p_esp_m,uint &np)
+void LeerDatosSistema2(str dir,uint n_esp_m,uint n_esp_p,uint *n_m_esp_mr,uint *n_p_esp_m,uint &np,uint &nm)
 {
     str f=dir+"/Datos/Datos_Sistema.txt";
     str temp;
@@ -31,10 +32,11 @@ void LeerDatosSistema2(str dir,uint n_esp_m,uint n_esp_p,uint *n_m_esp_mr,uint *
     PAbrioArchivo(f,iff);
     iff >> imp; iff >> temp;
     iff >> imp; iff >> temp;
-    np=0;
+    np=nm=0;
     for(int i=0;i< n_esp_m;i++){
         iff >> imp; iff >> temp;
         n_m_esp_mr[i]=imp;
+        nm+=imp;
     }
     for(int i=0;i< n_esp_m;i++){
         iff >> imp; iff >> temp;
@@ -86,6 +88,7 @@ void LeerDatosAtomos(str dir,double *param,uint n_param,uint n_esp_p)
 void LeerDatosMoleculas(str dir,uint n_esp_m,uint *n_p_esp_m,uint *esp_p_en_esp_mr,uint max_p_en_esp_mr,double3 *pos_respecto_p_central)
 {
     //Nota este arreglo esp_p_en_esp_mr se debe borrar y reemplazar por otro ya que si el maximo y minimo de particulas en especies moleculares es grande se desperdicia mucho espacio
+    //Nota2 no es cierto, este arreglo se borra ya que es remplazado por un arreglo de tamaño np donde viene la especie de cada particula
     uint tui;
     str f=dir+"/Datos/Datos_Moleculas.txt";
     str tp;
@@ -124,13 +127,13 @@ void LeerDatosInteraccion(str dir,uint n_esp_p,uint *M_int)
     }
     iff.close();
 }
-void AbrirArchivos(str directorio,double dens, uint nem, uint nea, uint *nme, uint nparam, double *param,std::ofstream &ofaedi,std::ofstream &ofapin,str &dpsco,std::ofstream &ofascl)
+void AbrirArchivos(str directorio,double dens, uint nem, uint nea, uint *nme, uint nparam, double *param,std::ofstream &ofaedi,std::ofstream &ofapin,str &dpsco)
 {
     /*****************************************/
     std::stringstream stream;
     std::stringstream *stream1;
     stream1=new std::stringstream[nparam*nea];
-    str dpsc1,dpsc,s,aedi,apin,ascl;
+    str dpsc1,dpsc,s,aedi,apin;
     /*****************************************/
     dpsc1 = directorio + "Corridas";
     mkdir(dpsc1.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
@@ -168,16 +171,14 @@ void AbrirArchivos(str directorio,double dens, uint nem, uint nea, uint *nme, ui
 
     aedi = dpsc + "/DatosIniciales.txt";
     apin = dpsc + "/Posiciones_Iniciales.txt";
-    ascl = dpsc + "/InfoClusters.txt";
 
     ofaedi.open(aedi.c_str());
     ofapin.open(apin.c_str());
-    ofascl.open(ascl.c_str());
 }
 
 void ImpresionDeDatos(int nc,int ncp,double dt,double temp,double v0,double rc,bool optvec,
                       bool optcel,int pot,double dens,uint n_esp_m,uint especies_atomicas,
-                      uint *m_de_esp_mr,uint *p_en_esp_mr, int *esp_de_p_en_m,
+                      uint *m_de_esp_mr,uint *p_en_esp_mr, uint *esp_de_p_en_m,
                       uint max_p_en_esp_mr,double3 *pos_respecto_p_central)
 {
     int ncc=nc/ncp;
@@ -217,7 +218,7 @@ void ImpresionDeDatos(int nc,int ncp,double dt,double temp,double v0,double rc,b
 
 void ImpresionDeDatosADisco(int nc,int ncp,double dt,double temp,double v0,double rc,bool optvec,
                             bool optcel,int pot,double dens,uint n_esp_m,uint n_esp_p,
-                            uint *m_de_esp_mr,uint *p_en_esp_mr,int *esp_de_p_en_m,
+                            uint *m_de_esp_mr,uint *p_en_esp_mr,uint *esp_de_p_en_m,
                             uint max_p_en_esp_mr,double3 *pos_respecto_p_central,std::ofstream &ofaedi)
 {
     /**************/
@@ -273,7 +274,7 @@ void ArchivosDeResultados(str dpsco,std::ofstream &ofasres,std::ofstream &ofasat
 }
 
 double3 CreandoCeldaMinima(uint n_esp_m,double3 *pos_respecto_p_central,uint max_p_en_esp_mr,
-                           double *param, uint nparam,int *especies_de_atomos_en_molecula,uint *atomos_en_especie_molecular)
+                           double *param, uint nparam,uint *especies_de_atomos_en_molecula,uint *atomos_en_especie_molecular)
 {
     
     /*
@@ -329,8 +330,8 @@ double3 CreandoCeldaMinima(uint n_esp_m,double3 *pos_respecto_p_central,uint max
 
 }
 
-void CentrarMoleculas(double *centrar_moleculas,uint especies_moleculares,uint *atomos_en_especie_molecular,
-                      int *especies_de_atomos_en_molecula,uint max_p_en_esp_mr,uint nparam,
+void CentrarMoleculas(double *centrar_m,uint n_esp_m,uint *n_p_esp_m,
+                      uint *esp_p_en_esp_mr,uint max_p_en_esp_mr,uint nparam,
                       double *param,double3 *pos_respecto_p_central)
 {
     
@@ -351,10 +352,10 @@ void CentrarMoleculas(double *centrar_moleculas,uint especies_moleculares,uint *
     int k=0;
     /*********************/
     
-    for(int i=0;i<especies_moleculares;i++){
+    for(int i=0;i<n_esp_m;i++){
         lon_n=InitDataType3<double3,double>(0.0,0.0,0.0);
-        for(int j=0;j<atomos_en_especie_molecular[i];j++){
-            k=especies_de_atomos_en_molecula[i*max_p_en_esp_mr+j];
+        for(int j=0;j<n_p_esp_m[i];j++){
+            k=esp_p_en_esp_mr[i*max_p_en_esp_mr+j];
             //estas expresiones asumen que el primer parametro para cada especie atomica siempre es su diametro
             comparador_neg=InitDataType3<double3,double>(pos_respecto_p_central[max_p_en_esp_mr*i+j].x-0.5*param[k*nparam],
                                                               pos_respecto_p_central[max_p_en_esp_mr*i+j].y-0.5*param[k*nparam],
@@ -363,16 +364,16 @@ void CentrarMoleculas(double *centrar_moleculas,uint especies_moleculares,uint *
             if(comparador_neg.y<=lon_n.y)lon_n.y=comparador_neg.y;
             if(comparador_neg.z<=lon_n.z)lon_n.z=comparador_neg.z;
         }
-        centrar_moleculas[nd*i]=-lon_n.x;
-        centrar_moleculas[nd*i+1]=-lon_n.y;
-        centrar_moleculas[nd*i+2]=-lon_n.z;
+        centrar_m[nd*i]=-lon_n.x;
+        centrar_m[nd*i+1]=-lon_n.y;
+        centrar_m[nd*i+2]=-lon_n.z;
     }
 }
 
 
 void ConfiguracionCubica(uint n_esp_m,uint *m_de_esp_mr,uint *p_en_esp_mr,double *pos,
                          double3 *pos_respecto_p_central,uint max_p_en_esp_mr,double3 &caja,double *centrar_m,
-                         double3 celda_minima,double densidad,std::ofstream &ofapin,int *esp_de_p_en_m,
+                         double3 celda_minima,double densidad,std::ofstream &ofapin,uint *esp_de_p_en_m,
                          uint nm,uint *esp_de_p)
 {
     /********************************************/

@@ -1,5 +1,8 @@
 #ifndef HILOSYBLOQUES_HEADER
 #define HILOSYBLOQUES_HEADER
+
+#include <iostream>
+#include <string>
 //En esta version lo que hacemos es que el numero de hilos en un bloque se balancee con el numero de bloques, dificilmente usamos los 1024 hilos por bloque
 void HilosenBloqueMultiplodeWarp(uint np, int &hpp,int &blockspergrid,int &threadsperblock,int minbpg,int maxtpb,int wz=32)
 {

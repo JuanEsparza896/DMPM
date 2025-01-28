@@ -2,10 +2,13 @@
 #include <string>
 #include "SistemaInicial.hpp"
 #include "OperacionesTDatosCuda.cuh"
+#include "OperacionesDeHilosyBloques.cuh"
+/*
 #include "SimulacionSinOptimizaciones.cuh"
 #include "SimulacionVecinos.cuh"
 #include "SimulacionCeldas.cuh"
 #include "SimulacionVecinosYCeldas.cuh"
+*/
 
 int main()
 {
@@ -37,21 +40,33 @@ int main()
     double temp;            //caso NVT temperatura del baño
     double v0;              //rapidez maxima inicial de las particulas
     double3 caja;           //tamano de la caja de simulacion
-    int nd;                 //dimension en la que se trabaja
+    uint n_esp_m;           //numero de especies moleculares
+    uint n_esp_p;           //numero de especies de particulas
+    bool vibrante;          //determina que algoritmo de constricciones se usa, potenciales de restriccion o RATTLE
+    uint *M_int;            //matriz de interaccion
+    double3 celda_min;      //tamano de la celda minima
+    /***********************************************************************/
+    //Datos de moleculas
+    uint nm;                //numero de moleculas
+    uint *n_m_esp_mr;       //numero de moleculas de cierta especie molecular
+    uint *n_p_esp_m;        //numero de particulas en cierta especie molecular
+    uint max_p_en_esp_mr;   //maximo de los valores de n_p_esp_m
+    uint *esp_p_en_esp_mr;
     /***********************************************************************/
     //Datos de atomos
 
     uint np;
-    //pot ya no sirve, ahora necesitamos la matriz de interacciones
-    //np necesita no ser dato en el documento de texto, viene de 
-    //eps y sig varian dependiendo de la especie atomica 
+    uint nparam;
+    uint *esp_p;            //arreglo con especie de cada particula
     int pot;
-    double *p,*v,*a;
-    double eps,sig;
+    double *pos,*vel,*acel;
+    double *param;
+    double3 *pos_respecto_p_central;
     
     
     
-
+    //temporales
+    uint arr_temp=0;
 
 
     //Inicializacion del sistema
@@ -59,17 +74,41 @@ int main()
     dir="/home/gach/DMPM";
     condper=InitDataType3<int3>(1,1,1);
     PropiedadesGPU(maxhilos,memoria_global);
-    LeerDatos(dir,dens,nd,np,nc,ncp,dt,temp,v0,rc,pot,eps,sig,dpsco,ofaedi,ofapin,opt,nhilos);
-    p=new double[np*nd];
-    v=new double[np*nd];
-    a=new double[np*nd];
-    Cuadrada(np,nd,sig,caja,dens,ofapin,p);
+    LeerDatosSistema1(dir,n_esp_m,n_esp_p);
+    n_m_esp_mr = new uint[n_esp_m];
+    n_p_esp_m = new uint[n_esp_m];
+    LeerDatosSistema2(dir,n_esp_m,n_esp_p,n_m_esp_mr,n_p_esp_m,np,nm);
+    pos=new double[np*nd];
+    vel=new double[np*nd];
+    acel=new double[np*nd];
+    int cvec=0,ccel=0;
+    LeerDatosCorrida(dir,nc,ncp,dt,temp,v0,rc,dens,pot,cvec,ccel,nhilos,vibrante,nparam);
+    opt=cvec+2*ccel;
+    param = new double[nparam*n_esp_p];
+    LeerDatosAtomos(dir,param,nparam,n_esp_p);
+    for(int i=0;i<n_esp_m;i++)
+    if(n_p_esp_m[i]>=arr_temp)arr_temp=n_p_esp_m[i];
+    max_p_en_esp_mr = arr_temp;arr_temp=0;
+    esp_p_en_esp_mr = new uint[max_p_en_esp_mr*n_esp_m];
+    pos_respecto_p_central = new double3[max_p_en_esp_mr*n_esp_m];
+    LeerDatosMoleculas(dir,n_esp_m,n_p_esp_m,esp_p_en_esp_mr,max_p_en_esp_mr,pos_respecto_p_central);
+    M_int = new uint[n_esp_p*n_esp_p];
+    LeerDatosInteraccion(dir,n_esp_p,M_int);
+    AbrirArchivos(dir,dens,n_esp_m,n_esp_p,n_m_esp_mr,nparam,param,ofaedi,ofapin,dpsco);
+    ImpresionDeDatos(nc,ncp,dt,temp,v0,rc,cvec,ccel,pot,dens,n_esp_m,n_esp_p,n_m_esp_mr,n_p_esp_m,esp_p_en_esp_mr,max_p_en_esp_mr,pos_respecto_p_central);
+    ImpresionDeDatosADisco(nc,ncp,dt,temp,v0,rc,cvec,ccel,pot,dens,n_esp_m,n_esp_p,n_m_esp_mr,n_p_esp_m,esp_p_en_esp_mr,max_p_en_esp_mr,pos_respecto_p_central,ofaedi);
+
+    celda_min=CreandoCeldaMinima(n_esp_m,pos_respecto_p_central,max_p_en_esp_mr,param,nparam,esp_p_en_esp_mr,n_p_esp_m);
+    double *centrar_m = new double[nd*n_esp_m];
+    CentrarMoleculas(centrar_m,n_esp_m,n_p_esp_m,esp_p_en_esp_mr,max_p_en_esp_mr,nparam,param,pos_respecto_p_central);
+    esp_p = new uint[np];
+    ConfiguracionCubica(n_esp_m,n_m_esp_mr,n_p_esp_m,pos,pos_respecto_p_central,max_p_en_esp_mr,caja,centrar_m,celda_min,dens,ofapin,esp_p_en_esp_mr,nm,esp_p);
     double3 dcajai=InvDataType3<double3>(caja);
-    ImprimirDatos(dens,nd,np,pot,sig,eps,caja,nc,ncp,dt,rc,ofaedi);
-    VelocidadesInicialesalAzar(v0,v,np,nd);
+    InicializarVelocidades(v0,vel,np);
     /*******************************************************************************************************************/
     double rbuf=0.5;
     ArchivosDeResultados(dpsco,ofasres,ofasat,opt);
+    /*
     switch(opt)
     {
         case 0:
@@ -86,8 +125,9 @@ int main()
         SimulacionVYC(np,nd,p,v,a,sig,eps,caja,dcajai,condper,temp,ofasres,ofasat,nc,dt,dens,ncp,rc,rbuf,nhilos,pot,maxhilos,memoria_global);
         break;
     }
-    delete[] p;
-    delete[] v;
-    delete[] a;
+    */
+    delete[] pos;
+    delete[] vel;
+    delete[] acel;
     return 0;
 }
