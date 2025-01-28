@@ -117,7 +117,9 @@ void LeerDatosInteraccion(str dir,uint n_esp_p,uint *M_int)
         for(int j=0;j<n_esp_p;j++)
         {
             iff >> tmp;
-            M_int[n_esp_p*i+j]=tmp; 
+            M_int[n_esp_p*i+j]=tmp;
+            printf("Interaccion de especies %d-%d: ",i,j);
+            if(tmp)printf("Activa\n"); else printf("Inactiva\n"); 
         }
     }
     iff.close();
@@ -146,18 +148,17 @@ void AbrirArchivos(str directorio,double dens, uint nem, uint nea, uint *nme, ui
     }
     for(int j=0;j<nea;j++){
         dpsc += "_diametro"+std::to_string(j)+"_";
-        stream1[nea*0+j] << std::fixed << std::setprecision(2) << param[nea*0+j];
-        s = stream1[nea*0+j].str();
+        stream1[j*nparam] << std::fixed << std::setprecision(2) << param[j*nparam];
+        s = stream1[j*nparam].str();
         dpsc += s;
     }
-    for(int i=1;i<nparam;i++){
-        for(int j=0;j<nea;j++){
+    for(int j=0;j<nea;j++)
+        for(int i=1;i<nparam;i++){
             dpsc += "_param_"+std::to_string(i)+"_"+std::to_string(j)+"_";
-            stream1[nea*i+j] << std::fixed << std::setprecision(2) << param[nea*i+j];
-            s = stream1[nea*i+j].str();
-            dpsc += s;
+            stream1[nparam*j+i] << std::fixed << std::setprecision(2) << param[nparam*j+i];
+            s = stream1[nparam*j+i].str();
+            dpsc += s;    
         }
-    }
 
     std::cout << "LOS ARCHIVOS DE ESTA CORRIDA SE GUARDAN EN: " << dpsc << std::endl;
     
@@ -174,17 +175,17 @@ void AbrirArchivos(str directorio,double dens, uint nem, uint nea, uint *nme, ui
     ofascl.open(ascl.c_str());
 }
 
-void ImpresionDeDatos(int nc,int ncp,double dt,double temperatura,double v0,double rc,bool optvec,
-                      bool optcel,int pot,double dens,uint especies_moleculares,uint especies_atomicas,
-                      uint *moleculas_de_especie,uint *atomos_en_especie_molecular, int *especies_de_atomos_en_molecula,
-                      int maximo_de_atomos_en_molecula,double *posiciones_atomos_en_molecula)
+void ImpresionDeDatos(int nc,int ncp,double dt,double temp,double v0,double rc,bool optvec,
+                      bool optcel,int pot,double dens,uint n_esp_m,uint especies_atomicas,
+                      uint *m_de_esp_mr,uint *p_en_esp_mr, int *esp_de_p_en_m,
+                      uint max_p_en_esp_mr,double3 *pos_respecto_p_central)
 {
     int ncc=nc/ncp;
     printf("\n---------------------------------------------------------------------------\n\n");
     printf("Datos de Corrida:\n\n");
     printf("Configuraciones: %d\nCada cuantas configuraciones imprimimos propiedades:%d\n",nc,ncc);
     printf("Tamaño del paso de integracion: %.3lf\n",dt);
-    printf("Temperatura a la que se debe mantener el sistema (CASO NVT): %.1lf\n",temperatura);
+    printf("Temperatura a la que se debe mantener el sistema (CASO NVT): %.1lf\n",temp);
     printf("Rapidez inicial maxima de las particulas: %.1lf\n",v0);
     printf("Radio de corte (en caso de optimizaciones): %.1lf\n",rc);
     printf("Optimizacion de vecinos: ");
@@ -201,21 +202,23 @@ void ImpresionDeDatos(int nc,int ncp,double dt,double temperatura,double v0,doub
     printf("Densidad: %.2lf\n",dens);
     printf("Dimensiones: %d\n",nd);
     printf("\nDatos de Atomos y Moleculas\n\n");
-    printf("Especies moleculares: %d\n",especies_moleculares);
+    printf("Especies moleculares: %d\n",n_esp_m);
     printf("Especies atomicas: %d\n\n",especies_atomicas);
-    for(int i=0;i<especies_moleculares;i++)printf("Moleculas de la especie %d: %d\n",i,moleculas_de_especie[i]);
-    for(int i=0;i<especies_moleculares;i++)printf("Atomos en la especie molecular %d: %d\n",i,atomos_en_especie_molecular[i]);
+    for(int i=0;i<n_esp_m;i++)printf("Moleculas de la especie %d: %d\n",i,m_de_esp_mr[i]);
+    for(int i=0;i<n_esp_m;i++)printf("Atomos en la especie molecular %d: %d\n",i,p_en_esp_mr[i]);
     printf("\n");
-    for(int i=0;i<especies_moleculares;i++)for(int j=0;j<atomos_en_especie_molecular[i];j++)printf("Especie de los atomos en la especie molecular %d: %d\n",i,especies_de_atomos_en_molecula[i*maximo_de_atomos_en_molecula+j]);
+    for(int i=0;i<n_esp_m;i++)for(int j=0;j<p_en_esp_mr[i];j++)printf("Especie de los atomos en la especie molecular %d: %d\n",i,esp_de_p_en_m[i*max_p_en_esp_mr+j]);
     printf("Respecto al atomo central de la especie molecular correspondiente: \n\n");
-    for(int i=0;i<especies_moleculares;i++)for(int j=0;j<atomos_en_especie_molecular[i];j++)printf("Posiciones de los atomos en la especie molecular %d: (%.4lf,%.4lf,%.4lf)\n",i,posiciones_atomos_en_molecula[i*maximo_de_atomos_en_molecula*nd+j*nd],posiciones_atomos_en_molecula[i*maximo_de_atomos_en_molecula*nd+j*nd+1],posiciones_atomos_en_molecula[i*maximo_de_atomos_en_molecula*nd+j*nd+2]);
+    for(int i=0;i<n_esp_m;i++)
+        for(int j=0;j<p_en_esp_mr[i];j++)
+            printf("Posiciones de los atomos en la especie molecular %d: (%.4lf,%.4lf,%.4lf)\n",i,pos_respecto_p_central[max_p_en_esp_mr*i+j].x,pos_respecto_p_central[max_p_en_esp_mr*i+j].y,pos_respecto_p_central[max_p_en_esp_mr*i+j].z);
     printf("\n---------------------------------------------------------------------------\n\n");
 }
 
-void ImpresionDeDatosADisco(int nc,int ncp,double dt,double temperatura,double v0,double rc,bool optvec,
-                            bool optcel,int pot,double dens,uint especies_moleculares,uint especies_atomicas,
-                            uint *moleculas_de_especie,uint *atomos_en_especie_molecular,int *especies_de_atomos_en_molecula,
-                            int maximo_de_atomos_en_molecula,double *posiciones_atomos_en_molecula,std::ofstream &ofaedi)
+void ImpresionDeDatosADisco(int nc,int ncp,double dt,double temp,double v0,double rc,bool optvec,
+                            bool optcel,int pot,double dens,uint n_esp_m,uint n_esp_p,
+                            uint *m_de_esp_mr,uint *p_en_esp_mr,int *esp_de_p_en_m,
+                            uint max_p_en_esp_mr,double3 *pos_respecto_p_central,std::ofstream &ofaedi)
 {
     /**************/
     int ncc=nc/ncp;
@@ -223,7 +226,7 @@ void ImpresionDeDatosADisco(int nc,int ncp,double dt,double temperatura,double v
     ofaedi << "Datos de Corrida:\n\n";
     ofaedi << "Configuraciones: " << nc << "\nCada cuantas configuraciones imprimimos propiedades:" << ncc << "\n";
     ofaedi << "Tamaño del paso de integracion:" << std::setprecision(3) << dt << "\n";
-    ofaedi << "Temperatura a la que se debe mantener el sistema (CASO NVT):" << std::setprecision(2) << temperatura << "\n";
+    ofaedi << "Temperatura a la que se debe mantener el sistema (CASO NVT):" << std::setprecision(2) << temp << "\n";
     ofaedi << "Rapidez inicial maxima de las particulas:" << std::setprecision(2) << v0 << "\n";
     ofaedi << "Radio de corte (en caso de optimizaciones):" << std::setprecision(2) << rc << "\n";
     ofaedi << "Optimizacion de vecinos: ";
@@ -240,14 +243,14 @@ void ImpresionDeDatosADisco(int nc,int ncp,double dt,double temperatura,double v
     ofaedi << "Densidad:" << std::setprecision(3) << dens << "\n";
     ofaedi << "Dimensiones:" << nd << "\n";
     ofaedi << "\nDatos de Atomos y Moleculas\n\n";
-    ofaedi << "Especies moleculares:" << especies_moleculares << "\n";
-    ofaedi << "Especies atomicas: " << especies_atomicas << "\n\n";
-    for(int i=0;i<especies_moleculares;i++)ofaedi << "Moleculas de la especie " << i << ": " << moleculas_de_especie[i] << "\n";
-    for(int i=0;i<especies_moleculares;i++)ofaedi << "Atomos en la especie molecular " << i << ": " << atomos_en_especie_molecular[i] << "\n";
+    ofaedi << "Especies moleculares:" << n_esp_m << "\n";
+    ofaedi << "Especies atomicas: " << n_esp_p << "\n\n";
+    for(int i=0;i<n_esp_m;i++)ofaedi << "Moleculas de la especie " << i << ": " << m_de_esp_mr[i] << "\n";
+    for(int i=0;i<n_esp_m;i++)ofaedi << "Atomos en la especie molecular " << i << ": " << p_en_esp_mr[i] << "\n";
     ofaedi << "\n";
-    for(int i=0;i<especies_moleculares;i++)for(int j=0;j<atomos_en_especie_molecular[i];j++)ofaedi << "Especie de los atomos en la especie molecular " << i << ": " << especies_de_atomos_en_molecula[i*maximo_de_atomos_en_molecula+j] << "\n";
+    for(int i=0;i<n_esp_m;i++)for(int j=0;j<p_en_esp_mr[i];j++)ofaedi << "Especie de los atomos en la especie molecular " << i << ": " << esp_de_p_en_m[i*max_p_en_esp_mr+j] << "\n";
     ofaedi << "Respecto al atomo central de la especie molecular correspondiente: \n\n";
-    for(int i=0;i<especies_moleculares;i++)for(int j=0;j<atomos_en_especie_molecular[i];j++)ofaedi << "Posiciones de los atomos en la especie molecular " << i << ": (" << std::setprecision(4) << posiciones_atomos_en_molecula[i*maximo_de_atomos_en_molecula*nd+j*nd] << "," << std::setprecision(4) << posiciones_atomos_en_molecula[i*maximo_de_atomos_en_molecula*nd+j*nd+1] << "," << std::setprecision(4) << posiciones_atomos_en_molecula[i*maximo_de_atomos_en_molecula*nd+j*nd+2] << ")\n";
+    for(int i=0;i<n_esp_m;i++)for(int j=0;j<p_en_esp_mr[i];j++)ofaedi << "Posiciones de los atomos en la especie molecular " << i << ": (" << std::setprecision(4) << pos_respecto_p_central[max_p_en_esp_mr*i+j].x << "," << std::setprecision(4) << pos_respecto_p_central[max_p_en_esp_mr*i+j].y << "," << std::setprecision(4) << pos_respecto_p_central[max_p_en_esp_mr*i+j].z << ")\n";
     
 }
 
@@ -280,7 +283,7 @@ void ArchivosDeResultados(str dpsco,std::ofstream &ofasres,std::ofstream &ofasat
     ofasres.open(asres.c_str());
 }
 
-double3 CreandoCeldaMinima(uint n_esp_m,double *posiciones_atomos_en_molecula,uint maximo_de_atomos_en_molecula,
+double3 CreandoCeldaMinima(uint n_esp_m,double3 *pos_respecto_p_central,uint max_p_en_esp_mr,
                            double *param, uint nparam,int *especies_de_atomos_en_molecula,uint *atomos_en_especie_molecular)
 {
     
@@ -316,15 +319,15 @@ double3 CreandoCeldaMinima(uint n_esp_m,double *posiciones_atomos_en_molecula,ui
     
     for(int i=0;i<n_esp_m;i++){
         for(int j=0;j<atomos_en_especie_molecular[i];j++){
-            k=especies_de_atomos_en_molecula[i*maximo_de_atomos_en_molecula+j];
+            k=especies_de_atomos_en_molecula[i*max_p_en_esp_mr+j];
             //estas expresiones asumen que el primer parametro para cada especie atomica siempre es su diametro
-            comparador_pos=InitDataType3<double3,double>(posiciones_atomos_en_molecula[i*maximo_de_atomos_en_molecula*nd+j*nd]+0.5*param[k],
-                                                              posiciones_atomos_en_molecula[i*maximo_de_atomos_en_molecula*nd+j*nd+1]+0.5*param[k],
-                                                              posiciones_atomos_en_molecula[i*maximo_de_atomos_en_molecula*nd+j*nd+2]+0.5*param[k]);
+            comparador_pos=InitDataType3<double3,double>(pos_respecto_p_central[max_p_en_esp_mr*i+j].x+0.5*param[k*nparam],
+                                                              pos_respecto_p_central[max_p_en_esp_mr*i+j].y+0.5*param[k*nparam],
+                                                              pos_respecto_p_central[max_p_en_esp_mr*i+j].z+0.5*param[k*nparam]);
 
-            comparador_neg=InitDataType3<double3,double>(posiciones_atomos_en_molecula[i*maximo_de_atomos_en_molecula*nd+j*nd]-0.5*param[k],
-                                                              posiciones_atomos_en_molecula[i*maximo_de_atomos_en_molecula*nd+j*nd+1]-0.5*param[k],
-                                                              posiciones_atomos_en_molecula[i*maximo_de_atomos_en_molecula*nd+j*nd+2]-0.5*param[k]);
+            comparador_neg=InitDataType3<double3,double>(pos_respecto_p_central[max_p_en_esp_mr*i+j].x-0.5*param[k*nparam],
+                                                              pos_respecto_p_central[max_p_en_esp_mr*i+j].y-0.5*param[k*nparam],
+                                                              pos_respecto_p_central[max_p_en_esp_mr*i+j].z-0.5*param[k*nparam]);
             if(comparador_pos.x>=lon_p.x)lon_p.x=comparador_pos.x;
             if(comparador_pos.y>=lon_p.y)lon_p.y=comparador_pos.y;
             if(comparador_pos.z>=lon_p.z)lon_p.z=comparador_pos.z;
@@ -338,8 +341,8 @@ double3 CreandoCeldaMinima(uint n_esp_m,double *posiciones_atomos_en_molecula,ui
 }
 
 void CentrarMoleculas(double *centrar_moleculas,uint especies_moleculares,uint *atomos_en_especie_molecular,
-                      int *especies_de_atomos_en_molecula,uint maximo_de_atomos_en_molecula,uint nparam,
-                      double *param,double *posiciones_atomos_en_molecula)
+                      int *especies_de_atomos_en_molecula,uint max_p_en_esp_mr,uint nparam,
+                      double *param,double3 *pos_respecto_p_central)
 {
     
     /*
@@ -362,11 +365,11 @@ void CentrarMoleculas(double *centrar_moleculas,uint especies_moleculares,uint *
     for(int i=0;i<especies_moleculares;i++){
         lon_n=InitDataType3<double3,double>(0.0,0.0,0.0);
         for(int j=0;j<atomos_en_especie_molecular[i];j++){
-            k=especies_de_atomos_en_molecula[i*maximo_de_atomos_en_molecula+j];
+            k=especies_de_atomos_en_molecula[i*max_p_en_esp_mr+j];
             //estas expresiones asumen que el primer parametro para cada especie atomica siempre es su diametro
-            comparador_neg=InitDataType3<double3,double>(posiciones_atomos_en_molecula[i*maximo_de_atomos_en_molecula*nd+j*nd]-0.5*param[k],
-                                                              posiciones_atomos_en_molecula[i*maximo_de_atomos_en_molecula*nd+j*nd+1]-0.5*param[k],
-                                                              posiciones_atomos_en_molecula[i*maximo_de_atomos_en_molecula*nd+j*nd+2]-0.5*param[k]);
+            comparador_neg=InitDataType3<double3,double>(pos_respecto_p_central[max_p_en_esp_mr*i+j].x-0.5*param[k*nparam],
+                                                              pos_respecto_p_central[max_p_en_esp_mr*i+j].y-0.5*param[k*nparam],
+                                                              pos_respecto_p_central[max_p_en_esp_mr*i+j].z-0.5*param[k*nparam]);
             if(comparador_neg.x<=lon_n.x)lon_n.x=comparador_neg.x;
             if(comparador_neg.y<=lon_n.y)lon_n.y=comparador_neg.y;
             if(comparador_neg.z<=lon_n.z)lon_n.z=comparador_neg.z;
@@ -378,24 +381,23 @@ void CentrarMoleculas(double *centrar_moleculas,uint especies_moleculares,uint *
 }
 
 
-void ConfiguracionCubica(uint especies_moleculares,uint *moleculas_de_especie,uint *atomos_en_especie_molecular,double *posiciones,
-                         double *posiciones_atomos_en_molecula,uint maximo_de_atomos_en_molecula,double3 &caja,double *centrar_moleculas,
-                         double3 celda_minima,double densidad,std::ofstream &ofapin,int *especies_de_atomos_en_molecula,
-                         uint moleculas,uint *especie_del_atomo)
+void ConfiguracionCubica(uint n_esp_m,uint *m_de_esp_mr,uint *p_en_esp_mr,double *pos,
+                         double3 *pos_respecto_p_central,uint max_p_en_esp_mr,double3 &caja,double *centrar_m,
+                         double3 celda_minima,double densidad,std::ofstream &ofapin,int *esp_de_p_en_m,
+                         uint nm,uint *esp_de_p)
 {
     /********************************************/
     int3 particulas_por_lado;
     double3 cel;
     uint *moleculas_de_especie_acumuladas;
     int k=0,part=0,h=0,l=0;
-    uint num_cluster=0;
     /********************************************/
-    particulas_por_lado.x=pow(moleculas,1.0/nd)+0.5;
-    particulas_por_lado.y=moleculas/particulas_por_lado.x;
+    particulas_por_lado.x=pow(nm,1.0/nd)+0.5;
+    particulas_por_lado.y=nm/particulas_por_lado.x;
     particulas_por_lado.y=pow(particulas_por_lado.y,1.0/(nd-1))+0.5;
-    particulas_por_lado.z=moleculas/(particulas_por_lado.x*particulas_por_lado.y);
-    if(particulas_por_lado.z*particulas_por_lado.x*particulas_por_lado.y<moleculas)particulas_por_lado.z++;
-    printf("\nMoleculas: %d\nMoleculas en cada direccion(inicialmente): (%d,%d,%d)\nMoleculas que caben en la caja de sumulacion %d\n",moleculas,particulas_por_lado.x,particulas_por_lado.y,particulas_por_lado.z,particulas_por_lado.x*particulas_por_lado.y*particulas_por_lado.z);
+    particulas_por_lado.z=nm/(particulas_por_lado.x*particulas_por_lado.y);
+    if(particulas_por_lado.z*particulas_por_lado.x*particulas_por_lado.y<nm)particulas_por_lado.z++;
+    printf("\nMoleculas: %d\nMoleculas en cada direccion(inicialmente): (%d,%d,%d)\nMoleculas que caben en la caja de sumulacion %d\n",nm,particulas_por_lado.x,particulas_por_lado.y,particulas_por_lado.z,particulas_por_lado.x*particulas_por_lado.y*particulas_por_lado.z);
     
     cel=InitDataType3<double3,double>(celda_minima.x,celda_minima.y,celda_minima.z);
     
@@ -414,15 +416,13 @@ void ConfiguracionCubica(uint especies_moleculares,uint *moleculas_de_especie,ui
 
     int x=0,y=0,z=0;
 
-    moleculas_de_especie_acumuladas=new uint[especies_moleculares];
-
-    moleculas_de_especie_acumuladas[0]=moleculas_de_especie[0];
-    for(int i=1;i<especies_moleculares;i++)moleculas_de_especie_acumuladas[i]=moleculas_de_especie_acumuladas[i-1]+moleculas_de_especie[i];
+    moleculas_de_especie_acumuladas=new uint[n_esp_m];
+    for(int i=0;i<n_esp_m;i++)moleculas_de_especie_acumuladas[i]=m_de_esp_mr[i];
     
     ofapin << "particula molecula especie_molecular especie_atomica"<< std::endl;
-    for(int i=0;i<moleculas;i++){
+    for(int i=0;i<nm;i++){
         if(moleculas_de_especie_acumuladas[k]<=0)k++;
-        if(k>=especies_moleculares)return;
+        if(k>=n_esp_m)return;
         if(x>=particulas_por_lado.x){
             x=0;
             y++;
@@ -433,25 +433,23 @@ void ConfiguracionCubica(uint especies_moleculares,uint *moleculas_de_especie,ui
         }
         h=0;
         l=0;
-        for(int j=0;j<atomos_en_especie_molecular[k];j++){
-            posiciones[part*nd]=x*cel.x+posiciones_atomos_en_molecula[k*maximo_de_atomos_en_molecula*nd+j*nd]+centrar_moleculas[nd*k];
-            posiciones[part*nd+1]=y*cel.y+posiciones_atomos_en_molecula[k*maximo_de_atomos_en_molecula*nd+j*nd+1]+centrar_moleculas[nd*k+1];
-            posiciones[part*nd+2]=z*cel.z+posiciones_atomos_en_molecula[k*maximo_de_atomos_en_molecula*nd+j*nd+2]+centrar_moleculas[nd*k+2];
-            especie_del_atomo[part] = especies_de_atomos_en_molecula[k*maximo_de_atomos_en_molecula+j];
-            ofapin << part << "\t" << i << "\t" << k << "\t" << especies_de_atomos_en_molecula[k*maximo_de_atomos_en_molecula+j]<<
-            "\t" << posiciones[part*nd] << "\t" <<  posiciones[part*nd+1] << "\t" <<  posiciones[part*nd+2] << std::endl;
+        for(int j=0;j<p_en_esp_mr[k];j++){
+            pos[part*nd]=x*cel.x+pos_respecto_p_central[max_p_en_esp_mr*k+j].x+centrar_m[nd*k];
+            pos[part*nd+1]=y*cel.y+pos_respecto_p_central[max_p_en_esp_mr*k+j].y+centrar_m[nd*k+1];
+            pos[part*nd+2]=z*cel.z+pos_respecto_p_central[max_p_en_esp_mr*k+j].z+centrar_m[nd*k+2];
+            esp_de_p[part] = esp_de_p_en_m[k*max_p_en_esp_mr+j];
+            ofapin << part << "\t" << i << "\t" << k << "\t" << esp_de_p_en_m[k*max_p_en_esp_mr+j]<<
+            "\t" << pos[part*nd] << "\t" <<  pos[part*nd+1] << "\t" <<  pos[part*nd+2] << std::endl;
             part++;
             h++;
         }
         x++;
-        num_cluster++;
         moleculas_de_especie_acumuladas[k]--;
     }
 }
 
-void VelocidadesInicialesalAzar(double v0,double *v,int np)
+void InicializarVelocidades(double v0,double *v,int np)
 {
-    //velocidades Iniciales al azar
     double r;
     srand(1);
       for(int ip=0; ip<np; ip++)
@@ -462,6 +460,21 @@ void VelocidadesInicialesalAzar(double v0,double *v,int np)
           }
       }
 
+}
+
+void DistanciasEntreParticulasEnMoleculaIniciales(uint np,uint n_esp_m,uint max_p_en_esp_mr,uint *n_p_esp_mr,double3 *dis_p_esp_mr_rep,double3 *pos_respecto_p_central)
+{
+
+    for(int i=0;i<n_esp_m;i++){
+        for(int j=0;j<n_p_esp_mr[i];j++){
+            for(int k=0;k<n_p_esp_mr[i];k++){
+                dis_p_esp_mr_rep[i*max_p_en_esp_mr*max_p_en_esp_mr+j*max_p_en_esp_mr+k].x = pos_respecto_p_central[max_p_en_esp_mr*i+j].x - pos_respecto_p_central[max_p_en_esp_mr*i+k].x;
+                dis_p_esp_mr_rep[i*max_p_en_esp_mr*max_p_en_esp_mr+j*max_p_en_esp_mr+k].y = pos_respecto_p_central[max_p_en_esp_mr*i+j].y - pos_respecto_p_central[max_p_en_esp_mr*i+k].y;
+                dis_p_esp_mr_rep[i*max_p_en_esp_mr*max_p_en_esp_mr+j*max_p_en_esp_mr+k].z = pos_respecto_p_central[max_p_en_esp_mr*i+j].z - pos_respecto_p_central[max_p_en_esp_mr*i+k].z;        
+            }    
+        }
+    }
+    
 }
 
 #endif
