@@ -63,10 +63,10 @@ void LeerDatosCorrida(str dir,uint &nc,uint &ncp,double &dt,double &temp,double 
     iff >> nhilos; iff >> tp;
     iff >> cvec; iff >> tp;
     iff >> ccel; iff >> tp;
-    iff >> nhilos; iff >> tp;
     iff >> tmp; iff >> tp;
     if(tmp)vibrante=true;
     iff >> nparam; iff >> tp;
+    printf("nparam %d\n",nparam);
     iff.close();
 }
 void LeerDatosAtomos(str dir,double *param,uint n_param,uint n_esp_p)
@@ -135,14 +135,14 @@ void AbrirArchivos(str directorio,double dens, uint nem, uint nea, uint *nme, ui
     stream1=new std::stringstream[nparam*nea];
     str dpsc1,dpsc,s,aedi,apin;
     /*****************************************/
-    dpsc1 = directorio + "Corridas";
+    dpsc1 = directorio + "/Corridas";
     mkdir(dpsc1.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
     
     dpsc = dpsc1;
+    printf("nparam: %d\n",nparam);
     
     stream << std::fixed << std::setprecision(2) << dens;
     s = stream.str();
-
     dpsc += "/dens_"+ s;
     dpsc += "_nd_" + std::to_string(nd) + "_nem_" + std::to_string(nem) + "_nea_" + std::to_string(nea);
 
@@ -151,17 +151,22 @@ void AbrirArchivos(str directorio,double dens, uint nem, uint nea, uint *nme, ui
     }
     for(int j=0;j<nea;j++){
         dpsc += "_diametro"+std::to_string(j)+"_";
+        std::cout << "s " << s<< std::endl;
         stream1[j*nparam] << std::fixed << std::setprecision(2) << param[j*nparam];
         s = stream1[j*nparam].str();
+        std::cout << "s " << s<< std::endl;
         dpsc += s;
     }
     for(int j=0;j<nea;j++)
         for(int i=1;i<nparam;i++){
             dpsc += "_param_"+std::to_string(i)+"_"+std::to_string(j)+"_";
             stream1[nparam*j+i] << std::fixed << std::setprecision(2) << param[nparam*j+i];
+            std::cout << "s " << s<< std::endl;
             s = stream1[nparam*j+i].str();
+            std::cout << "s " << s<< std::endl;
             dpsc += s;    
         }
+        printf("bandera interna\n");
 
     std::cout << "LOS ARCHIVOS DE ESTA CORRIDA SE GUARDAN EN: " << dpsc << std::endl;
     

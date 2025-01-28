@@ -7,7 +7,7 @@
 0.65 dens
 1 potencial
 32 hilosPP
-1 ovec
-1 ocel
+0 ovec
+0 ocel
 0 vibrante
 2 nparam
