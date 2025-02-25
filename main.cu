@@ -3,12 +3,11 @@
 #include "SistemaInicial.hpp"
 #include "OperacionesTDatosCuda.cuh"
 #include "OperacionesDeHilosyBloques.cuh"
-/*
 #include "SimulacionSinOptimizaciones.cuh"
 #include "SimulacionVecinos.cuh"
 #include "SimulacionCeldas.cuh"
 #include "SimulacionVecinosYCeldas.cuh"
-*/
+
 
 int main()
 {
@@ -51,15 +50,17 @@ int main()
     uint *n_m_esp_mr;       //numero de moleculas de cierta especie molecular
     uint *n_p_esp_m;        //numero de particulas en cierta especie molecular
     uint max_p_en_esp_mr;   //maximo de los valores de n_p_esp_m
-    uint *esp_p_en_esp_mr;
+    uint *esp_p_en_esp_mr;  //especie de las particulas
+    uint *M_int_int;        //matriz de interacciones internas
+    uint *p_en_m;           //nos indica la primera particula dentro de cierta molecula 
     /***********************************************************************/
     //Datos de atomos
 
     uint np;
     uint nparam;
     uint *esp_p;            //arreglo con especie de cada particula
-    uint *m_de_p;
-    int pot;
+    uint3 *mad_de_p;           //particulas antes y despues de cierta particula en su molecula(Ver nota 1 antes de la inicializacion del sistema)
+    uint pot;
     double *pos,*vel,*acel;
     double *param;
     double3 *pos_respecto_p_central;
@@ -69,9 +70,19 @@ int main()
     //temporales
     uint arr_temp=0;
 
-
-    //Inicializacion del sistema
-    /*******************************************************************************************************************/
+    /*******************************************************************************************************************
+    Notas
+    
+    Nota 1:
+        Este arreglo funciona ya que al generar las moleculas sus particulas se crean consecutivamente, por ejemplo
+        si la molecula m tiene 5 particulas, quiere decir que contiene las ip,ip+1,ip+2,ip+3,ip+4
+        El arreglo pad_de_p funciona asi, 
+            pad_de_p[ip].x a que molecula pertenece la particula
+            pad_de_p[ip].y cuantas particulas hay antes de ip en la molecula
+            pad_de_p[ip].z cuantas particulas hay despues de ip en la molecula
+            
+    Inicializacion del sistema
+    *******************************************************************************************************************/
     dir="/home/gach/DMPM";
     condper=InitDataType3<int3>(1,1,1);
     PropiedadesGPU(maxhilos,memoria_global);
@@ -82,6 +93,7 @@ int main()
     pos=new double[np*nd];
     vel=new double[np*nd];
     acel=new double[np*nd];
+    p_en_m=new uint[nm];
     int cvec=0,ccel=0;
     LeerDatosCorrida(dir,nc,ncp,dt,temp,v0,rc,dens,pot,cvec,ccel,nhilos,vibrante,nparam);
     opt=cvec+2*ccel;
@@ -94,7 +106,10 @@ int main()
     pos_respecto_p_central = new double3[max_p_en_esp_mr*n_esp_m];
     LeerDatosMoleculas(dir,n_esp_m,n_p_esp_m,esp_p_en_esp_mr,max_p_en_esp_mr,pos_respecto_p_central);
     M_int = new uint[n_esp_p*n_esp_p];
+    // el 2 es por que ahora solo hay 2 tipos de potenciales de restriccion: de enlace y de angulo, el numero sera 3 cuando se agregue torsion o 4 cuando agregue diedro, etc
+    M_int_int = new uint[2*n_esp_m];
     LeerDatosInteraccion(dir,n_esp_p,M_int);
+    LeerDatosInteraccionInterna(dir,n_esp_m,M_int_int);
     AbrirArchivos(dir,dens,n_esp_m,n_esp_p,n_m_esp_mr,nparam,param,ofaedi,ofapin,dpsco);
     ImpresionDeDatos(nc,ncp,dt,temp,v0,rc,cvec,ccel,pot,dens,n_esp_m,n_esp_p,n_m_esp_mr,n_p_esp_m,esp_p_en_esp_mr,max_p_en_esp_mr,pos_respecto_p_central);
     ImpresionDeDatosADisco(nc,ncp,dt,temp,v0,rc,cvec,ccel,pot,dens,n_esp_m,n_esp_p,n_m_esp_mr,n_p_esp_m,esp_p_en_esp_mr,max_p_en_esp_mr,pos_respecto_p_central,ofaedi);
@@ -102,31 +117,31 @@ int main()
     double *centrar_m = new double[nd*n_esp_m];
     CentrarMoleculas(centrar_m,n_esp_m,n_p_esp_m,esp_p_en_esp_mr,max_p_en_esp_mr,nparam,param,pos_respecto_p_central);
     esp_p = new uint[np];
-    m_de_p = new uint[np];
-    ConfiguracionCubica(n_esp_m,n_m_esp_mr,n_p_esp_m,pos,pos_respecto_p_central,max_p_en_esp_mr,caja,centrar_m,celda_min,dens,ofapin,esp_p_en_esp_mr,nm,esp_p,m_de_p);
-    double3 dcajai=InvDataType3<double3>(caja);
+    mad_de_p = new uint3[np];
+    ConfiguracionCubica(n_esp_m,n_m_esp_mr,n_p_esp_m,p_en_m,pos,pos_respecto_p_central,max_p_en_esp_mr,caja,centrar_m,celda_min,dens,ofapin,esp_p_en_esp_mr,nm,esp_p,mad_de_p);
+    double3 cajai=InvDataType3<double3>(caja);
     InicializarVelocidades(v0,vel,np);
     /*******************************************************************************************************************/
+    //Lo usamos para optimizaciones
     double rbuf=0.5;
     ArchivosDeResultados(dpsco,ofasres,ofasat,opt);
-    /*
+    
     switch(opt)
     {
         case 0:
-        
-        Simulacion(np,nd,p,v,a,sig,eps,caja,dcajai,condper,temp,ofasres,ofasat,nc,dt,dens,ncp,nhilos,pot,maxhilos,memoria_global);
+        Simulacion(nc,ncp,nhilos,np,nparam,pot,n_esp_p,mad_de_p,esp_p,M_int,maxhilos,memoria_global,dt,dens,param,pos,vel,acel,condper,caja,cajai,ofasres,ofasat);
         break;
         case 1:
-        SimulacionV(np,nd,p,v,a,sig,eps,caja,dcajai,condper,temp,ofasres,ofasat,nc,dt,dens,ncp,rc,rbuf,nhilos,pot,maxhilos,memoria_global);
+        SimulacionV(nc,ncp,np,n_esp_p,nparam,pot,esp_p,M_int,nhilos,maxhilos,mad_de_p,condper,rc,rbuf,dens,temp,dt,param,pos,vel,acel,caja,cajai,memoria_global,ofasres,ofasat);
         break;
         case 2:
-        SimulacionC(np,nd,p,v,a,sig,eps,caja,dcajai,condper,temp,ofasres,ofasat,nc,dt,dens,ncp,rc,rbuf,nhilos,pot,maxhilos,memoria_global);
+        SimulacionC(nc,ncp,np,n_esp_p,nparam,pot,esp_p,M_int,nhilos,maxhilos,rc,temp,dt,dens,param,pos,vel,acel,mad_de_p,condper,caja,cajai,memoria_global,ofasat,ofasres);
         break;
         case 3:
-        SimulacionVYC(np,nd,p,v,a,sig,eps,caja,dcajai,condper,temp,ofasres,ofasat,nc,dt,dens,ncp,rc,rbuf,nhilos,pot,maxhilos,memoria_global);
+        SimulacionVYC(nc,ncp,np,n_esp_p,nparam,pot,esp_p,M_int,nhilos,maxhilos,rc,rbuf,dens,temp,dt,param,pos,vel,acel,mad_de_p,condper,caja,cajai,memoria_global,ofasres,ofasat);
         break;
     }
-    */
+    
     delete[] pos;
     delete[] vel;
     delete[] acel;

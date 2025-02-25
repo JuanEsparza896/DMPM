@@ -8,9 +8,11 @@
 /**************************************************************************************************************************************************/
 //Vecinos
 
-int CuantosVecCaben(double rc,double sig,double dens,uint np)
+int CuantosVecCaben(double rc,double *param,double dens,uint np,uint n_esp_p,uint nparam)
 {
-    double rcc=rc+sig;
+    double sig=1000.;
+    for(int i=0;i<n_esp_p;i++)if(param[i*nparam]<=sig)sig=param[i*nparam];
+    double rcc=rc+0.5*sig;
     /*
     La densidad maxima de esferas es:
     https://en.wikipedia.org/wiki/Close-packing_of_equal_spheres
@@ -31,10 +33,11 @@ int CuantosVecCaben(double rc,double sig,double dens,uint np)
     return nmaxvec;
 }
 
-__global__ void CalculoDeVecinos(uint np,int chp,const double *p, int *vecinos, unsigned int *n_vecinos, int nmaxvec,int3 condper, double3 caja,double3 cajai,double rc)
+__global__ void CalculoDeVecinos(uint np,uint n_esp_p,uint *M_int,uint *esp_de_p,int chp,const double *p, int *vecinos, unsigned int *n_vecinos, int nmaxvec,int3 condper,uint3 *mad_de_p, double3 caja,double3 cajai,double rc)
 {
     int particula = threadIdx.x+blockIdx.x*blockDim.x;
     particula/=chp;
+    uint esp1,esp2;
     if(particula>=np)return;
     const int lane= threadIdx.x & (chp-1);
     int nv;
@@ -42,22 +45,24 @@ __global__ void CalculoDeVecinos(uint np,int chp,const double *p, int *vecinos, 
     pix=__ldg(p+3*particula);
     piy=__ldg(p+3*particula+1);
     piz=__ldg(p+3*particula+2);
+    esp1=esp_de_p[particula];
     double3 pi=InitDataType3<double3>(pix,piy,piz);
     double3 pj,dif;
     for(int j=lane;j<np;j+=chp){
         pjx=__ldg(p+3*j);
         pjy=__ldg(p+3*j+1);
         pjz=__ldg(p+3*j+2);
+        esp2=esp_de_p[j];
         pj=InitDataType3<double3>(pjx,pjy,pjz);
-            dif.x=pi.x-pj.x;
-            dif.y=pi.y-pj.y;
-            dif.z=pi.z-pj.z;
-            dif=CondPeriodicas(condper,caja,dif,cajai);
-            dis=Discuad(dif);
-            if(dis<=rc*rc&&particula!=j){
-                nv=atomicInc(&n_vecinos[particula],FULL_MASK);
-                if(nv<nmaxvec)vecinos[particula*nmaxvec+nv]=j;
-            }
+        dif.x=pi.x-pj.x;
+        dif.y=pi.y-pj.y;
+        dif.z=pi.z-pj.z;
+        dif=CondPeriodicas(condper,caja,dif,cajai);
+        dis=Discuad(dif);
+        if(dis<=rc*rc&&mad_de_p[particula].x!=mad_de_p[j].x&&M_int[n_esp_p*esp1+esp2]){
+            nv=atomicInc(&n_vecinos[particula],FULL_MASK);
+            if(nv<nmaxvec)vecinos[particula*nmaxvec+nv]=j;
+        }
     }
 }
 
@@ -65,9 +70,11 @@ __global__ void CalculoDeVecinos(uint np,int chp,const double *p, int *vecinos, 
 //Celdas
 
 
-int CuantasPartEnCel(double sig, double3 tamcel)
+uint CuantasPartEnCel(uint n_esp_p,uint nparam,double *param, double3 tamcel)
 {
-    int num_part=1;
+    double sig=1000.;
+    for(int i=0;i<n_esp_p;i++)if(param[i*nparam]<=sig)sig=param[i*nparam];
+    uint num_part=1;
     /*
     para ver cuantas particulas caben en una celda consideraremos celdas cubicas cuyo 
     tamaño esta determinado por la longitud maxima de los distintos lados de la celda
@@ -126,9 +133,9 @@ int CuantasPartEnCel(double sig, double3 tamcel)
     return num_part;
 }
 
-int CrearCeldas(double3 caja,double3 &tamcel,double3 &invtamcel)
+uint CrearCeldas(double3 caja,double3 &tamcel,double3 &invtamcel)
 {
-    int nceldas=0;
+    uint nceldas=0;
     int3 celdas;
     celdas.x=caja.x; printf("Celdas en x: %d\n",celdas.x);
     celdas.y=caja.y; printf("Celdas en y: %d\n",celdas.y);
@@ -144,7 +151,7 @@ int CrearCeldas(double3 caja,double3 &tamcel,double3 &invtamcel)
 }
 
 //TODO mejorar este algoritmo para la lista vaya desde la celda mas interna a la externa (tratando de redicir error computacional).
-void CalculoDeCeldasVecinas(double3 caja,int *veccel,short dc,int nveccel)
+void CalculoDeCeldasVecinas(double3 caja,uint *veccel,short dc,uint nveccel)
 {
     int ncx=0,ncy=0,ncz=0;
     int celv;
@@ -185,7 +192,7 @@ void CalculoDeCeldasVecinas(double3 caja,int *veccel,short dc,int nveccel)
     }
 }
 
-__global__ void CalculoCeldas(uint np,int nmax_particulas_en_celda,uint *num_particulas_en_celda,int *particulas_en_celda,double *p,double3 invtamcel,double3 caja, int nceldas)
+__global__ void CalculoCeldas(uint np,int nmax_particulas_en_celda,uint *num_particulas_en_celda,uint *particulas_en_celda,double *p,double3 invtamcel,double3 caja,uint nceldas)
 {
     int gid=threadIdx.x+blockDim.x*blockIdx.x;
     if(gid>=np)return;
@@ -211,12 +218,11 @@ __global__ void CalculoCeldas(uint np,int nmax_particulas_en_celda,uint *num_par
 /**************************************************************************************************************************************************/
 //Mezcla
 
-__global__ void CalculoDeVecinosConCeldas(uint np,int chp,int nmaxvec,int nmax_particulas_en_celda,int *vecinos,int *particulas_en_celda,
-                                          uint *num_particulas_en_celda,uint *n_vecinos,int3 condper,double3 caja,
-                                          double3 cajai,const double *p,double rc,int nveccel,int *veccel, double3 invtamcel)
+__global__ void CalculoDeVecinosConCeldas(uint np,uint n_de_cel_vec,uint nmax_p_en_cel,uint n_esp_p,uint *esp_de_p,uint *cel_vec,uint *np_cel,uint *p_en_cel,
+                                          uint *M_int,uint *nvec,int chp,int nmaxvec,int *vecinos,double rc,double *p,int3 condper,uint3 *mad_de_p,double3 caja,double3 cajai,double3 invtamcel)
 {
     int particula,nv,celda,celv,j;
-    uint eLx,eLy,fa;
+    uint eLx,eLy,fa,esp1,esp2;
     double pix,piy,piz,pjx,pjy,pjz,dis;
     const int lane= threadIdx.x & (chp-1);
     double3 pi,pj,dif;
@@ -227,9 +233,9 @@ __global__ void CalculoDeVecinosConCeldas(uint np,int chp,int nmaxvec,int nmax_p
 
     if(particula>=np)return;
 
-    int cuantas_celdas_por_hilo=nveccel/chp;
+    int cuantas_celdas_por_hilo=n_de_cel_vec/chp;
     int ccll=0;
-    if(nveccel%chp)cuantas_celdas_por_hilo++;
+    if(n_de_cel_vec%chp)cuantas_celdas_por_hilo++;
     
     eLx=caja.x,eLy=caja.y;
     fa=eLx*eLy;
@@ -237,6 +243,7 @@ __global__ void CalculoDeVecinosConCeldas(uint np,int chp,int nmaxvec,int nmax_p
     pix=__ldg(p+3*particula);
     piy=__ldg(p+3*particula+1);
     piz=__ldg(p+3*particula+2);
+    esp1=esp_de_p[particula];
     pi=InitDataType3<double3>(pix,piy,piz);
     
     if(pix==caja.x&&piy==caja.y&&piz==caja.z)celda=0;
@@ -246,22 +253,23 @@ __global__ void CalculoDeVecinosConCeldas(uint np,int chp,int nmaxvec,int nmax_p
     celda=pos.x+eLx*pos.y+fa*pos.z;
     //if(!lane)printf("particula: %d,celda: %d\n",particula,celda);
     #pragma unroll
-    for(int k=lane;k<nveccel;k+=chp){
+    for(int k=lane;k<n_de_cel_vec;k+=chp){
         if(ccll>cuantas_celdas_por_hilo)break;
-        celv=veccel[celda*nveccel+k];
-        for(int jp=0;jp<num_particulas_en_celda[celv];jp++){
-            j = particulas_en_celda[celv*nmax_particulas_en_celda+jp];
+        celv=cel_vec[celda*n_de_cel_vec+k];
+        for(int jp=0;jp<np_cel[celv];jp++){
+            j = p_en_cel[celv*nmax_p_en_cel+jp];
             pjx = __ldg(p+3*j);
             pjy = __ldg(p+3*j+1);
             pjz = __ldg(p+3*j+2);
+            esp2=esp_de_p[j];
             pj = InitDataType3<double3>(pjx,pjy,pjz);
             dif.x=pi.x-pj.x;
             dif.y=pi.y-pj.y;
             dif.z=pi.z-pj.z;
             dif=CondPeriodicas(condper,caja,dif,cajai);
             dis=Discuad(dif);
-            if(dis<=rc*rc&&particula!=j){
-                nv=atomicInc(&n_vecinos[particula],FULL_MASK);
+            if(dis<=rc*rc&&mad_de_p[particula].x!=mad_de_p[j].x&&M_int[n_esp_p*esp1+esp2]){
+                nv=atomicInc(&nvec[particula],FULL_MASK);
                 if(nv<nmaxvec)vecinos[particula*nmaxvec+nv]=j;
             }
         }

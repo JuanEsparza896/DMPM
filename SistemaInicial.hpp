@@ -45,7 +45,7 @@ void LeerDatosSistema2(str dir,uint n_esp_m,uint n_esp_p,uint *n_m_esp_mr,uint *
     }
     iff.close();
 }
-void LeerDatosCorrida(str dir,uint &nc,uint &ncp,double &dt,double &temp,double &v0,double &rc,double &dens,int &pot,int &cvec,int &ccel,int &nhilos,bool &vibrante,uint &nparam)
+void LeerDatosCorrida(str dir,uint &nc,uint &ncp,double &dt,double &temp,double &v0,double &rc,double &dens,uint &pot,int &cvec,int &ccel,int &nhilos,bool &vibrante,uint &nparam)
 {
     str f=dir+"/Datos/Datos_Corrida.txt";
     str tp;
@@ -66,7 +66,6 @@ void LeerDatosCorrida(str dir,uint &nc,uint &ncp,double &dt,double &temp,double 
     iff >> tmp; iff >> tp;
     if(tmp)vibrante=true;
     iff >> nparam; iff >> tp;
-    printf("nparam %d\n",nparam);
     iff.close();
 }
 void LeerDatosAtomos(str dir,double *param,uint n_param,uint n_esp_p)
@@ -127,6 +126,28 @@ void LeerDatosInteraccion(str dir,uint n_esp_p,uint *M_int)
     }
     iff.close();
 }
+
+void LeerDatosInteraccionInterna(str dir,uint n_esp_m,uint *M_int_int)
+{
+    str f=dir+"/Datos/InteraccionInterna.txt";
+    str tp;
+    std::ifstream iff(f);
+    uint tmp;
+    PAbrioArchivo(f,iff);
+    printf("Interaccion de especies moleculares:\n");
+    for(int i=0;i<n_esp_m;i++)
+    {
+        printf("Especie %d ",i);
+        for(int j=0;j<2;j++)
+        {
+            iff >> tmp;
+            M_int_int[n_esp_m*i+j]=tmp;
+            printf("Interaccion %d: ");
+            if(tmp)printf("Activa\n"); else printf("Inactiva\n"); 
+        }
+    }
+    iff.close();
+}
 void AbrirArchivos(str directorio,double dens, uint nem, uint nea, uint *nme, uint nparam, double *param,std::ofstream &ofaedi,std::ofstream &ofapin,str &dpsco)
 {
     /*****************************************/
@@ -139,7 +160,6 @@ void AbrirArchivos(str directorio,double dens, uint nem, uint nea, uint *nme, ui
     mkdir(dpsc1.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
     
     dpsc = dpsc1;
-    printf("nparam: %d\n",nparam);
     
     stream << std::fixed << std::setprecision(2) << dens;
     s = stream.str();
@@ -151,22 +171,17 @@ void AbrirArchivos(str directorio,double dens, uint nem, uint nea, uint *nme, ui
     }
     for(int j=0;j<nea;j++){
         dpsc += "_diametro"+std::to_string(j)+"_";
-        std::cout << "s " << s<< std::endl;
         stream1[j*nparam] << std::fixed << std::setprecision(2) << param[j*nparam];
         s = stream1[j*nparam].str();
-        std::cout << "s " << s<< std::endl;
         dpsc += s;
     }
     for(int j=0;j<nea;j++)
         for(int i=1;i<nparam;i++){
             dpsc += "_param_"+std::to_string(i)+"_"+std::to_string(j)+"_";
             stream1[nparam*j+i] << std::fixed << std::setprecision(2) << param[nparam*j+i];
-            std::cout << "s " << s<< std::endl;
             s = stream1[nparam*j+i].str();
-            std::cout << "s " << s<< std::endl;
             dpsc += s;    
         }
-        printf("bandera interna\n");
 
     std::cout << "LOS ARCHIVOS DE ESTA CORRIDA SE GUARDAN EN: " << dpsc << std::endl;
     
@@ -182,7 +197,7 @@ void AbrirArchivos(str directorio,double dens, uint nem, uint nea, uint *nme, ui
 }
 
 void ImpresionDeDatos(int nc,int ncp,double dt,double temp,double v0,double rc,bool optvec,
-                      bool optcel,int pot,double dens,uint n_esp_m,uint especies_atomicas,
+                      bool optcel,uint pot,double dens,uint n_esp_m,uint especies_atomicas,
                       uint *m_de_esp_mr,uint *p_en_esp_mr, uint *esp_de_p_en_m,
                       uint max_p_en_esp_mr,double3 *pos_respecto_p_central)
 {
@@ -222,7 +237,7 @@ void ImpresionDeDatos(int nc,int ncp,double dt,double temp,double v0,double rc,b
 }
 
 void ImpresionDeDatosADisco(int nc,int ncp,double dt,double temp,double v0,double rc,bool optvec,
-                            bool optcel,int pot,double dens,uint n_esp_m,uint n_esp_p,
+                            bool optcel,uint pot,double dens,uint n_esp_m,uint n_esp_p,
                             uint *m_de_esp_mr,uint *p_en_esp_mr,uint *esp_de_p_en_m,
                             uint max_p_en_esp_mr,double3 *pos_respecto_p_central,std::ofstream &ofaedi)
 {
@@ -376,15 +391,15 @@ void CentrarMoleculas(double *centrar_m,uint n_esp_m,uint *n_p_esp_m,
 }
 
 
-void ConfiguracionCubica(uint n_esp_m,uint *m_de_esp_mr,uint *p_en_esp_mr,double *pos,
+void ConfiguracionCubica(uint n_esp_m,uint *m_de_esp_mr,uint *p_en_esp_mr,uint *p_en_m,double *pos,
                          double3 *pos_respecto_p_central,uint max_p_en_esp_mr,double3 &caja,double *centrar_m,
                          double3 celda_minima,double densidad,std::ofstream &ofapin,uint *esp_de_p_en_m,
-                         uint nm,uint *esp_de_p,uint *m_de_p)
+                         uint nm,uint *esp_de_p,uint3 *m_de_p)
 {
     /********************************************/
     int3 particulas_por_lado;
     double3 cel;
-    uint *moleculas_de_especie_acumuladas;
+    uint *moleculas_de_especie_acumuladas,contp=0;
     int k=0,part=0;
     /********************************************/
     particulas_por_lado.x=pow(nm,1.0/nd)+0.5;
@@ -416,6 +431,7 @@ void ConfiguracionCubica(uint n_esp_m,uint *m_de_esp_mr,uint *p_en_esp_mr,double
     
     ofapin << "particula molecula especie_molecular especie_atomica"<< std::endl;
     for(int i=0;i<nm;i++){
+        p_en_m[i]=part;
         if(moleculas_de_especie_acumuladas[k]<=0)k++;
         if(k>=n_esp_m)return;
         if(x>=particulas_por_lado.x){
@@ -426,15 +442,19 @@ void ConfiguracionCubica(uint n_esp_m,uint *m_de_esp_mr,uint *p_en_esp_mr,double
             y=0;
             z++;
         }
+        contp=0;
         for(int j=0;j<p_en_esp_mr[k];j++){
             pos[part*nd]=x*cel.x+pos_respecto_p_central[max_p_en_esp_mr*k+j].x+centrar_m[nd*k];
             pos[part*nd+1]=y*cel.y+pos_respecto_p_central[max_p_en_esp_mr*k+j].y+centrar_m[nd*k+1];
             pos[part*nd+2]=z*cel.z+pos_respecto_p_central[max_p_en_esp_mr*k+j].z+centrar_m[nd*k+2];
             esp_de_p[part] = esp_de_p_en_m[k*max_p_en_esp_mr+j];
-            m_de_p[part]=i;
+            m_de_p[part].x=i;
+            m_de_p[part].y=contp;
+            m_de_p[part].z=p_en_esp_mr[k]-1-contp;
             ofapin << part << "\t" << i << "\t" << k << "\t" << esp_de_p_en_m[k*max_p_en_esp_mr+j]<<
             "\t" << pos[part*nd] << "\t" <<  pos[part*nd+1] << "\t" <<  pos[part*nd+2] << std::endl;
             part++;
+            contp++;
         }
         x++;
         moleculas_de_especie_acumuladas[k]--;

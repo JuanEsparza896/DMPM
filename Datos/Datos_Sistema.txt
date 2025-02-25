@@ -1,4 +1,4 @@
 1 nem
 1 nea
-4000 nme[0]
+8000 nme[0]
 1 naem[0]

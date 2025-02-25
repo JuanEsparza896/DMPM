@@ -116,5 +116,11 @@ __global__ void KernelVelocidades(uint np,double *v,double *a, double dt,double3
     v[ip*3+2]=viz;
 }
 
+int signoF(double val){
+    int val1;
+    if(val>=0.)val1=val+0.5;
+    else{val1=val-0.5;}
+    return val1;
+}
 
 #endif

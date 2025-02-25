@@ -3,21 +3,24 @@
 
 #include <stdio.h>
 
-#include "OperacionesDeHilosyBloques.hpp"
-#include "Potenciales.h"
+#include "OperacionesDeHilosyBloques.cuh"
+#include "Potenciales.cuh"
 #include "Optimizaciones.cuh"
 
-__global__ void AceleracionesfFuerzasLJV(uint np,const double *p,int chp,double *param,double3 caja,double3 cajai,int3 condper,double *epot,double *a,int *vec,unsigned int *nvec,int nmaxvec,double rc,bool nconf)
+__global__ void AceleracionesfFuerzasLJV(uint np,uint nparam,uint n_esp_p,uint pot_int,uint *esp_de_p,const double *p,int chp,double *M_param,double3 caja,double3 cajai,int3 condper,double *epot,double *a,int *vec,unsigned int *nvec,int nmaxvec,double rc,bool nconf)
 {
     int gid=threadIdx.x+blockDim.x*blockIdx.x;
     gid/=chp;
     int lane=threadIdx.x&(chp-1);
     int nvpt=nvec[gid];
     int j;
+    uint esp1=0,esp2=0,elem_M = 0;
     extern __shared__ double s_mem[];
 
-    s_mem[0]=param[0];
-    s_mem[1]=param[1];
+    for(int i=0;i<nparam;i++)
+        for(int j=0;j<n_esp_p;j++)
+            for(int k=0;k<n_esp_p;k++)
+                s_mem[i*n_esp_p*n_esp_p+n_esp_p*j+k]=M_param[i*n_esp_p*n_esp_p+n_esp_p*j+k];
     __syncthreads();
     
     double dis,pot=0.0;
@@ -32,27 +35,30 @@ __global__ void AceleracionesfFuerzasLJV(uint np,const double *p,int chp,double 
     piy=__ldg(p+3*gid+1);
     piz=__ldg(p+3*gid+2);
     pi=InitDataType3<double3>(pix,piy,piz);
+    esp1=esp_de_p[gid];
     #pragma unroll
     for(int jp=lane;jp<nvpt;jp+=chp){
-        j=vec[gid*nmaxvec+jp]; 
-            pjx=__ldg(p+3*j);
-            pjy=__ldg(p+3*j+1);
-            pjz=__ldg(p+3*j+2);
-            pj=InitDataType3<double3>(pjx,pjy,pjz);
-            dif.x=pi.x-pj.x;
-            dif.y=pi.y-pj.y;
-            dif.z=pi.z-pj.z;
-            dif=CondPeriodicas(condper,caja,dif,cajai);
-            dis=Discuad(dif);
-            if(dis<=r2c){
-                fuepot=InteraccionLJ(gid,j,dis,s_mem,nconf,true,r2c);
-                fuerza.x+=fuepot.x*dif.x;
-                fuerza.y+=fuepot.x*dif.y;
-                fuerza.z+=fuepot.x*dif.z;
-                if(nconf){
-                    pot+=fuepot.y;
-                } 
-            }    
+        j=vec[gid*nmaxvec+jp];
+        esp2=esp_de_p[j];
+        elem_M = n_esp_p*esp1+esp2; 
+        pjx=__ldg(p+3*j);
+        pjy=__ldg(p+3*j+1);
+        pjz=__ldg(p+3*j+2);
+        pj=InitDataType3<double3>(pjx,pjy,pjz);
+        dif.x=pi.x-pj.x;
+        dif.y=pi.y-pj.y;
+        dif.z=pi.z-pj.z;
+        dif=CondPeriodicas(condper,caja,dif,cajai);
+        dis=Discuad(dif);
+        if(dis<=r2c){
+            fuepot=Interaccion(pot_int,n_esp_p,elem_M,gid,j,dis,s_mem,nconf,true,r2c);
+            fuerza.x+=fuepot.x*dif.x;
+            fuerza.y+=fuepot.x*dif.y;
+            fuerza.z+=fuepot.x*dif.z;
+            if(nconf){
+                pot+=fuepot.y;
+            } 
+        }    
     }
    
     __syncwarp();
@@ -74,9 +80,8 @@ __global__ void AceleracionesfFuerzasLJV(uint np,const double *p,int chp,double 
     
 }
 
-void SimulacionV(uint np,int nd,double *p,double *v,double *a,double sig,double eps,double3 caja,
-                 double3 cajai,int3 condper,double temp,std::ofstream &ofasres,std::ofstream &ofasat,
-                 uint nc,double dt,double dens,uint ncp,double rc,double rbuf,int nhilos,int pot,int maxhilos,size_t memoria_global)
+void SimulacionV(uint nc,uint ncp,uint np,uint n_esp_p,uint nparam,uint pot,uint *esp_de_p,uint *M_int,int nhilos,int maxhilos,uint3 *mad_de_p,int3 condper,double rc,double rbuf,double dens,double temp,double dt,double *param,double *pos,
+                 double *vel,double *acel,double3 caja,double3 cajai,size_t memoria_global,std::ofstream &ofasres,std::ofstream &ofasat)
 {
     double rcc=rc+rbuf;
     int ncc=nc*ncp/100.0;
@@ -106,51 +111,57 @@ void SimulacionV(uint np,int nd,double *p,double *v,double *a,double sig,double 
     /***************************************************************************************************************************/
     //para el potencial de Lennard-Jones tenemos 2 parametros pl6 y plj12
     //para otros potenciales podemos llegar a tener mas parametros
-    int nparam;
-    switch(pot){
-        case 1:
-        nparam=2;
-        break;
-    }
-    printf("nparam: %d\n",nparam);
-    
-    int nmaxvec=CuantosVecCaben(rcc,sig,dens,np);
-
     /***************************************************************************************************************************/
     //Memoria para arreglos en la CPU
-    double *h_param=new double [nparam];
+    
+    double *h_M_param=new double [nparam*n_esp_p*n_esp_p];
     double *h_eit=new double[np];
+
+    InicializarMatrizDeParametros(pot,n_esp_p,nparam,param,h_M_param);
+    int nmaxvec=CuantosVecCaben(rcc,param,dens,np,n_esp_p,nparam);
     /***************************************************************************************************************************/
     //Memoria para arreglos de GPU
-    double *param,*d_eit,*d_p,*d_a;
-    int *vec;
-    unsigned int *nvec;
-    
-    Errorcuda(cudaMalloc(&param,nparam*sizeof(double)),"param",0);
+    double *d_eit,*d_pos,*d_acel,*d_M_param;
+    uint3 *d_mad_de_p;
+    int *d_vec;
+    uint *d_nvec,*d_esp_de_p,*d_M_int;
+
+    Errorcuda(cudaMalloc(&d_vec,sizeof(int)*nmaxvec*np),"vec",0);
+
+    Errorcuda(cudaMalloc(&d_mad_de_p,np*sizeof(uint3)),"mad_de_p",0);
+
+    Errorcuda(cudaMalloc(&d_esp_de_p,np*sizeof(uint)),"esp_de_p",0);
+    Errorcuda(cudaMalloc(&d_M_int,n_esp_p*n_esp_p*sizeof(uint)),"d_M_int",0);
+    Errorcuda(cudaMalloc(&d_nvec,sizeof(uint)*np),"nvec",0);
+
+    Errorcuda(cudaMalloc(&d_M_param,nparam*n_esp_p*n_esp_p*sizeof(double)),"param",0);
     Errorcuda(cudaMalloc(&d_eit,sizeof(double)*np),"d_eit",0);
-    Errorcuda(cudaMalloc(&d_p,sizeof(double)*nd*np),"d_p",0);
-    Errorcuda(cudaMalloc(&d_a,sizeof(double)*nd*np),"d_a",0);
-    Errorcuda(cudaMalloc(&nvec,sizeof(int)*np),"nvec",0);
-    Errorcuda(cudaMalloc(&vec,sizeof(int)*nmaxvec*np),"vec",0);
+    Errorcuda(cudaMalloc(&d_pos,sizeof(double)*nd*np),"d_p",0);
+    Errorcuda(cudaMalloc(&d_acel,sizeof(double)*nd*np),"d_a",0);
+    
+    
+    Errorcuda(cudaMemcpy(d_mad_de_p,mad_de_p,np*sizeof(uint3),cudaMemcpyHostToDevice),"mad_de_p",1);
+    Errorcuda(cudaMemcpy(d_esp_de_p,esp_de_p,np*sizeof(uint),cudaMemcpyHostToDevice),"esp_de_p",1);
+    Errorcuda(cudaMemcpy(d_M_int,M_int,n_esp_p*n_esp_p*sizeof(uint),cudaMemcpyHostToDevice),"M_int",1);
+
+    Errorcuda(cudaMemcpy(d_M_param,h_M_param,sizeof(double)*nparam*n_esp_p*n_esp_p,cudaMemcpyHostToDevice),"M_param",1);
+    Errorcuda(cudaMemcpy(d_pos,pos,sizeof(double)*nd*np,cudaMemcpyHostToDevice),"pos",1);    
+    
 
     size_t memoria_global_utilizada=(nparam+np*(1+2*nd))*sizeof(double)+(np*(1+nmaxvec))*sizeof(int);
     
     OcupacionDeMemoriaGlobal(memoria_global_utilizada,memoria_global);
     /***************************************************************************************************************************/
 
-    CalculoParamLJ(sig,eps,h_param);
-
-    Errorcuda(cudaMemcpy(param,h_param,sizeof(double)*nparam,cudaMemcpyHostToDevice),"param",1);
-    Errorcuda(cudaMemcpy(d_p,p,sizeof(double)*nd*np,cudaMemcpyHostToDevice),"p",1); 
-    cudaMemset(nvec,0,sizeof(int)*np);
-    CalculoDeVecinos<<<blockspergridvec,threadsperblockvec>>>(np,chp,d_p,vec,nvec,nmaxvec,condper,caja,cajai,rcc);
+    cudaMemset(d_nvec,0,sizeof(int)*np);
+    CalculoDeVecinos<<<blockspergridvec,threadsperblockvec>>>(np,n_esp_p,d_M_int,d_esp_de_p,chp,d_pos,d_vec,d_nvec,nmaxvec,condper,d_mad_de_p,caja,cajai,rcc);
     Errorcuda(cudaGetLastError(),"Calculo de vecinos",3);
     cudaDeviceSynchronize();
 
-    AceleracionesfFuerzasLJV<<<blockspergrid,threadsperblock>>>(np,d_p,chp,param,caja,cajai,condper,d_eit,d_a,vec,nvec,nmaxvec,rc,nconf);
+    AceleracionesfFuerzasLJV<<<blockspergrid,threadsperblock>>>(np,nparam,n_esp_p,pot,d_esp_de_p,d_pos,chp,d_M_param,caja,cajai,condper,d_eit,d_acel,d_vec,d_nvec,nmaxvec,rc,nconf);
     Errorcuda(cudaGetLastError(),"PLJ",3);    
     Errorcuda(cudaMemcpy(h_eit,d_eit,sizeof(double)*np,cudaMemcpyDeviceToHost),"eit",2);
-    Errorcuda(cudaMemcpy(a,d_a,sizeof(double)*nd*np,cudaMemcpyDeviceToHost),"a",2);
+    Errorcuda(cudaMemcpy(acel,d_acel,sizeof(double)*nd*np,cudaMemcpyDeviceToHost),"a",2);
 
     //En otra rama del main hare esto en paralelo dentro de aceleraciones y fuerzas como experimento
     for(ip=0;ip<np;ip++){
@@ -158,7 +169,7 @@ void SimulacionV(uint np,int nd,double *p,double *v,double *a,double sig,double 
     }
     
     eit/=2.0*np;
-    ect=CalculoEnergiaCinetica(nd,np,v);
+    ect=CalculoEnergiaCinetica(np,vel);
     temp= ect/nd;
     ect=ect/2.0;
     ett = ect + eit;
@@ -173,7 +184,7 @@ void SimulacionV(uint np,int nd,double *p,double *v,double *a,double sig,double 
     eis=ns=0;
     ofasat << "ip,p[],v[],a[]"<< std::endl;
     
-
+    
     for(ic=0;ic<nc;ic++){
         nconf=false;
         if(ic%ncc==0)nconf=true;
@@ -181,30 +192,30 @@ void SimulacionV(uint np,int nd,double *p,double *v,double *a,double sig,double 
 
             //Ciclo de dimensiones
             for(id=0; id<nd; id++){
-                p[id+ip*nd] +=(v[id+ip*nd] * dt + a[id+nd*ip]*dt*dt*0.5);              
+                pos[id+ip*nd] +=(vel[id+ip*nd] * dt + acel[id+nd*ip]*dt*dt*0.5);              
             }
-            if(p[ip*nd] > caja.x){p[ip*nd] -= caja.x;}
-            if(p[ip*nd] < 0){p[ip*nd] += caja.x;}
-            if(p[1+ip*nd] > caja.y){p[1+ip*nd] -= caja.y;}
-            if(p[1+ip*nd] < 0){p[1+ip*nd] += caja.y;}
-            if(p[2+ip*nd] > caja.z){p[2+ip*nd] -= caja.z;}
-            if(p[2+ip*nd] < 0){p[2+ip*nd] += caja.z;}
+            if(pos[ip*nd] > caja.x){pos[ip*nd] -= caja.x;}
+            if(pos[ip*nd] < 0){pos[ip*nd] += caja.x;}
+            if(pos[1+ip*nd] > caja.y){pos[1+ip*nd] -= caja.y;}
+            if(pos[1+ip*nd] < 0){pos[1+ip*nd] += caja.y;}
+            if(pos[2+ip*nd] > caja.z){pos[2+ip*nd] -= caja.z;}
+            if(pos[2+ip*nd] < 0){pos[2+ip*nd] += caja.z;}
         }
 
-        Velocidades(np,nd,v,a,dt);
+        Velocidades(np,vel,acel,dt);
        
-        Errorcuda(cudaMemcpy(d_p,p,sizeof(double)*nd*np,cudaMemcpyHostToDevice),"p",1);
+        Errorcuda(cudaMemcpy(d_pos,pos,sizeof(double)*nd*np,cudaMemcpyHostToDevice),"p",1);
         if(nc%10==0){
-            cudaMemset(nvec,0,sizeof(int)*np);
-            CalculoDeVecinos<<<blockspergridvec,threadsperblockvec>>>(np,chp,d_p,vec,nvec,nmaxvec,condper,caja,cajai,rcc);
+            cudaMemset(d_nvec,0,sizeof(int)*np);
+            CalculoDeVecinos<<<blockspergridvec,threadsperblockvec>>>(np,n_esp_p,d_M_int,d_esp_de_p,chp,d_pos,d_vec,d_nvec,nmaxvec,condper,d_mad_de_p,caja,cajai,rcc);
             Errorcuda(cudaGetLastError(),"Calculo de vecinos",3);
             cudaDeviceSynchronize();
         }
-        AceleracionesfFuerzasLJV<<<blockspergrid,threadsperblock>>>(np,d_p,chp,param,caja,cajai,condper,d_eit,d_a,vec,nvec,nmaxvec,rc,nconf);
+        AceleracionesfFuerzasLJV<<<blockspergrid,threadsperblock>>>(np,nparam,n_esp_p,pot,d_esp_de_p,d_pos,chp,d_M_param,caja,cajai,condper,d_eit,d_acel,d_vec,d_nvec,nmaxvec,rc,nconf);
         Errorcuda(cudaGetLastError(),"PLJ",3);
-        Errorcuda(cudaMemcpy(a,d_a,sizeof(double)*nd*np,cudaMemcpyDeviceToHost),"a",2);    
+        Errorcuda(cudaMemcpy(acel,d_acel,sizeof(double)*nd*np,cudaMemcpyDeviceToHost),"a",2);    
         
-        Velocidades(np,nd,v,a,dt);
+        Velocidades(np,vel,acel,dt);
         if(ic>0 && ic % ncc == 0){
             tf = clock();
             dtt =((double)(tf - ti))/CLOCKS_PER_SEC;
@@ -214,7 +225,7 @@ void SimulacionV(uint np,int nd,double *p,double *v,double *a,double sig,double 
                 eit+=h_eit[ip];
             }
             eit/=2.0*np;
-            ect = CalculoEnergiaCinetica(nd,np,v);
+            ect = CalculoEnergiaCinetica(np,vel);
             temp = ect/nd;
             ect=ect/2.0;
             ett = ect + eit;
@@ -232,7 +243,7 @@ void SimulacionV(uint np,int nd,double *p,double *v,double *a,double sig,double 
             " "<< ect << " "<< eit << " " << dtt <<std::endl;
 
             dens=dens;
-            IAaD(np,ofasat,p,v,a,nd);
+            IAaD(np,ofasat,pos,vel,acel);
         }
     }
     eit=0.0;
@@ -254,7 +265,7 @@ void SimulacionV(uint np,int nd,double *p,double *v,double *a,double sig,double 
     std::cout << "Resultados finales" << std::endl;
     tf = clock();
     dtt = ((double)(tf - ti))/CLOCKS_PER_SEC;
-    ect=CalculoEnergiaCinetica(np,nd,v);
+    ect=CalculoEnergiaCinetica(np,vel);
 
     std::cout << "nc,temp,dens,etp,ecp,eip,dtt"<<std::endl;
     std::cout << nc << " " << temp << " " << dens << " " << etp << " " << ecp << " " << eip << " " << dtt << std::endl;
@@ -265,15 +276,21 @@ void SimulacionV(uint np,int nd,double *p,double *v,double *a,double sig,double 
     ofasres << nc << " " << temp << " " << dens << " " << etp << " " << ecp << " " << eip << " " << dtt << std::endl;
     
 
-    IAaD(np,ofasat,p,v,a,nd);
+    IAaD(np,ofasat,pos,vel,acel);
+    
       
+    Errorcuda(cudaFree(d_vec),"vec",4);
 
+    Errorcuda(cudaFree(d_mad_de_p),"mad_de_p",4);
+
+    Errorcuda(cudaFree(d_esp_de_p),"esp_de_p",4);
+    Errorcuda(cudaFree(d_M_int),"d_M_int",4);
+    Errorcuda(cudaFree(d_nvec),"nvec",4);
+
+    Errorcuda(cudaFree(d_M_param),"param",4);
     Errorcuda(cudaFree(d_eit),"d_eit",4);
-    Errorcuda(cudaFree(d_p),"d_eit",4);
-    Errorcuda(cudaFree(d_a),"d_eit",4);
-    Errorcuda(cudaFree(nvec),"d_eit",4);
-    Errorcuda(cudaFree(vec),"d_eit",4);
-    Errorcuda(cudaFree(param),"param",4);
+    Errorcuda(cudaFree(d_pos),"d_p",4);
+    Errorcuda(cudaFree(d_acel),"d_a",4);
     cudaDeviceReset();
 }
 #endif
