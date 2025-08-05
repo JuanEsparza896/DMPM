@@ -29,12 +29,11 @@ void BerendsenTermo(uint np,double temp_ac,double temp_des,double dt,double tau,
     }
 }
 
-void AndersenTermo(uint np,uint randSeed,double nu,double dt,double temp_d,double *vel)
+void AndersenTermo(uint np,double nu,double dt,double temp_d,double *vel)
 {
     double pro=nu*dt;
     double ran;
-    uint num=randSeed;
-    if(randSeed==0)num=time(NULL);
+    uint num=time(NULL);
     srand(num);
     //fac es el factor que multiplica a la exponencial de la distribución de boltzmann
     //como kb=1.0 y la masa por ahora es 1.0 solo aparece el factor de la temperatura
@@ -43,23 +42,22 @@ void AndersenTermo(uint np,uint randSeed,double nu,double dt,double temp_d,doubl
     {
         ran=(rand() + 1.0) / (RAND_MAX + 1.0);
         if(ran<pro){
-            vel[i*nd]=fac*rand_BM(randSeed);
-            vel[i*nd+1]=fac*rand_BM(randSeed);
-            vel[i*nd+2]=fac*rand_BM(randSeed);
+            vel[i*nd]=fac*rand_BM();
+            vel[i*nd+1]=fac*rand_BM();
+            vel[i*nd+2]=fac*rand_BM();
         }
     }
 }
 
-void BDPTermo(uint np,uint randSeed,double ec_ac,double ec_d,double dt,double tau,double *vel)
+void BDPTermo(uint np,double ec_ac,double ec_d,double dt,double tau,double *vel)
 {
     const double gdl = nd*np+1; //Grados de libertad
     const double c1 = exp(-dt/tau);
     const double c2 = ec_d*(1.-c1)/(ec_ac*gdl);
-    uint num=randSeed;
-    if(randSeed==0)num=time(NULL);
+    uint num=time(NULL);
     srand(num);  
 
-    double n_al=rand_BM(randSeed);
+    double n_al=rand_BM();
     double n_all=n_al*n_al;
     double var=np-1;
     std::default_random_engine generator;
@@ -75,7 +73,7 @@ void BDPTermo(uint np,uint randSeed,double ec_ac,double ec_d,double dt,double ta
     }
 }
 
-void Termostato(uint termos,uint np,uint randSeed,double temp_ac,double temp_des,double dt, double param,double* vel)
+void Termostato(uint termos,uint np,double temp_ac,double temp_des,double dt, double param,double* vel)
 {
     //el termostato de Nose-Hoover altera las ecuaciones de movimiento por lo que no se incluye aqui
     /*
@@ -91,13 +89,13 @@ void Termostato(uint termos,uint np,uint randSeed,double temp_ac,double temp_des
         RescVel(np,temp_ac,temp_des,vel);
         break;
     case 1:
-    AndersenTermo(np,randSeed,param,dt,temp_des,vel);
+    AndersenTermo(np,param,dt,temp_des,vel);
         break;
     case 2:
     BerendsenTermo(np,temp_ac,temp_des,dt,param,vel);
         break;
     case 3:
-    BDPTermo(np,randSeed,temp_ac,temp_des,dt,param,vel);
+    BDPTermo(np,temp_ac,temp_des,dt,param,vel);
         break;
     }
 }

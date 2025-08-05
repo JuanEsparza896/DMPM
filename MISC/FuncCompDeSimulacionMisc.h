@@ -27,10 +27,9 @@ int signoF(double val){
     return val1;
 }
 
-double rand_BM(uint randSeed)
+double rand_BM()
 {
-    uint num=randSeed;
-    if(randSeed==0)num=time(NULL);
+    uint num=time(NULL);
     srand(num);
     const double pi=2*acos(0.);
     double u1 = (rand() + 1.0) / (RAND_MAX + 1.0);

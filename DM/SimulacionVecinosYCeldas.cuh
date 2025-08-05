@@ -11,7 +11,7 @@
 #include "rattle.cuh"
 #include "MISC/PropGPU.cuh"
 
-__global__ void AceleracionesfFuerzasLJVYC(uint np,uint nparam,uint n_esp_p,uint pot_int,uint *esp_de_p,const double *p,int chp,double *M_param,double3 caja,double3 cajai,int3 condper,double *epot,double *a,int *vec,unsigned int *nvec,int nmaxvec,double rc,bool nconf)
+__global__ void AceleracionesfFuerzasLJVYC(uint np,uint n_esp_p,uint pot_int,uint *esp_de_p,const double *p,int chp,double *M_param,double3 caja,double3 cajai,int3 condper,double *epot,double *a,int *vec,unsigned int *nvec,int nmaxvec,double rc,bool nconf)
 {
     int gid=threadIdx.x+blockDim.x*blockIdx.x;
     gid/=chp;
@@ -77,7 +77,7 @@ __global__ void AceleracionesfFuerzasLJVYC(uint np,uint nparam,uint n_esp_p,uint
 }
 
 void SimulacionVYC(uint nc,uint ncp,uint np,uint n_esp_p,uint n_esp_m,uint nparam,uint pot_int,uint max_p_en_esp_mr,
-                   uint ensamble,uint termos,uint randSeed,uint max_it,uint *esp_de_p,uint *M_int,uint *p_en_m,uint *n_m_esp_mr,uint *n_p_esp_m,
+                   uint ensamble,uint termos,uint max_it,uint *esp_de_p,uint *M_int,uint *p_en_m,uint *n_m_esp_mr,uint *n_p_esp_m,
                    int nhilos,int maxhilos,bool vibrante,double rc,double rbuf,double dens,double dt,double kres,
                    double temp_d,double param_termo,double tol,double *param,double *pos,double *vel,double *acel,double *q_rat,
                    double *dis_p_esp_mr_rep,uint3 *mad_de_p,int3 condper,double3 caja,double3 cajai,
@@ -187,7 +187,7 @@ void SimulacionVYC(uint nc,uint ncp,uint np,uint n_esp_p,uint n_esp_m,uint npara
     Errorcuda(cudaGetLastError(),"Calculo de vecinos",3);
     cudaDeviceSynchronize();
 
-    AceleracionesfFuerzasLJVYC<<<blockspergrid,threadsperblock>>>(np,nparam,n_esp_p,pot_int,d_esp_de_p,d_pos,chp,d_M_param,caja,cajai,condper,d_eit,d_acel,d_vec,d_nvec,nmaxvec,rc,nconf);
+    AceleracionesfFuerzasLJVYC<<<blockspergrid,threadsperblock>>>(np,n_esp_p,pot_int,d_esp_de_p,d_pos,chp,d_M_param,caja,cajai,condper,d_eit,d_acel,d_vec,d_nvec,nmaxvec,rc,nconf);
     Errorcuda(cudaGetLastError(),"PLJ",3);
     Errorcuda(cudaMemcpy(acel,d_acel,sizeof(double)*nd*np,cudaMemcpyDeviceToHost),"a",2);
     if(max_p_en_esp_mr-1)PotencialesDeRestriccion(n_esp_m,max_p_en_esp_mr,n_m_esp_mr,n_p_esp_m,p_en_m,condper,mad_de_p,kres,pos,acel,dis_p_esp_mr_rep,caja,cajai);
@@ -255,7 +255,7 @@ void SimulacionVYC(uint nc,uint ncp,uint np,uint n_esp_p,uint n_esp_m,uint npara
             Errorcuda(cudaGetLastError(),"Calculo de vecinos",3);
             cudaDeviceSynchronize();
         }
-         AceleracionesfFuerzasLJVYC<<<blockspergrid,threadsperblock>>>(np,nparam,n_esp_p,pot_int,d_esp_de_p,d_pos,chp,d_M_param,caja,cajai,condper,d_eit,d_acel,d_vec,d_nvec,nmaxvec,rc,nconf);
+         AceleracionesfFuerzasLJVYC<<<blockspergrid,threadsperblock>>>(np,n_esp_p,pot_int,d_esp_de_p,d_pos,chp,d_M_param,caja,cajai,condper,d_eit,d_acel,d_vec,d_nvec,nmaxvec,rc,nconf);
         Errorcuda(cudaGetLastError(),"PLJ",3);
         Errorcuda(cudaMemcpy(acel,d_acel,sizeof(double)*nd*np,cudaMemcpyDeviceToHost),"a",2);
         if(max_p_en_esp_mr-1)PotencialesDeRestriccion(n_esp_m,max_p_en_esp_mr,n_m_esp_mr,n_p_esp_m,p_en_m,condper,mad_de_p,kres,pos,acel,dis_p_esp_mr_rep,caja,cajai);
@@ -282,7 +282,7 @@ void SimulacionVYC(uint nc,uint ncp,uint np,uint n_esp_p,uint n_esp_m,uint npara
                 s_nh_a = s_nh_v*s_nh_v/s_nh_p+g1*s_nh_p/param_termo;
                 s_nh_v+=s_nh_a*0.5*dt;
             }else{
-                Termostato(termos,np,randSeed,temp,temp_d,dt,param_termo,vel);
+                Termostato(termos,np,temp,temp_d,dt,param_termo,vel);
             }
         }
 

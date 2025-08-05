@@ -11,7 +11,7 @@
 #include "rattle.cuh"
 #include "MISC/PropGPU.cuh"
 
-__global__ void AceleracionesfFuerzasLJC(uint np,uint nparam,uint n_esp_p,uint n_de_cel_vec,uint nmax_p_en_cel,uint pot_int,uint *p_en_cel,uint *np_cel,uint *esp_de_p,uint *cel_vec,uint *M_int,int chp,double rc,double *M_param,double *pos,double *epot,double *acel,uint3 *mad_de_p,int3 condper,double3 caja,double3 cajai,double3 invtamcel,bool nconf)
+__global__ void AceleracionesfFuerzasLJC(uint np,uint n_esp_p,uint n_de_cel_vec,uint nmax_p_en_cel,uint pot_int,uint *p_en_cel,uint *np_cel,uint *esp_de_p,uint *cel_vec,uint *M_int,int chp,double rc,double *M_param,double *pos,double *epot,double *acel,uint3 *mad_de_p,int3 condper,double3 caja,double3 cajai,double3 invtamcel,bool nconf)
 {
     uint esp1,esp2,elem_M;
     int gid=threadIdx.x+blockDim.x*blockIdx.x;
@@ -93,7 +93,7 @@ __global__ void AceleracionesfFuerzasLJC(uint np,uint nparam,uint n_esp_p,uint n
 }
 
 void SimulacionC(uint nc,uint ncp,uint np,uint n_esp_p,uint n_esp_m,uint nparam,uint pot_int,uint max_p_en_esp_mr,
-                 uint ensamble,uint termos,uint randSeed,uint max_it,uint *esp_de_p,uint *M_int,uint *p_en_m,uint *n_m_esp_mr,uint *n_p_esp_m,
+                 uint ensamble,uint termos,uint max_it,uint *esp_de_p,uint *M_int,uint *p_en_m,uint *n_m_esp_mr,uint *n_p_esp_m,
                  int nhilos,int maxhilos,bool vibrante,double rc,double dt,double dens,double kres,double temp_d,
                  double param_termo,double tol,double *param,double *pos,double *vel,double *acel,double *q_rat,uint3 *mad_de_p,int3 condper,
                  double3 caja,double3 cajai,double *dis_p_esp_mr_rep,
@@ -186,7 +186,7 @@ void SimulacionC(uint nc,uint ncp,uint np,uint n_esp_p,uint n_esp_m,uint nparam,
     CalculoCeldas<<<blockspergridcel,threadsperblockcel>>>(np,nmax_p_en_cel,d_np_cel,d_p_cel,d_pos,invtamcel,caja,nceldas);
     Errorcuda(cudaGetLastError(),"Calculo de celdas",3);
     cudaDeviceSynchronize();
-    AceleracionesfFuerzasLJC<<<blockspergrid,threadsperblock,sizeof(double)*nparam>>>(np,nparam,n_esp_p,n_de_cel_vec,nmax_p_en_cel,pot_int,d_p_cel,d_np_cel,d_esp_de_p,d_cel_vec,d_M_int,chp,rc,d_M_param,d_pos,d_eit,d_acel,d_mad_de_p,condper,caja,cajai,invtamcel,nconf);
+    AceleracionesfFuerzasLJC<<<blockspergrid,threadsperblock>>>(np,n_esp_p,n_de_cel_vec,nmax_p_en_cel,pot_int,d_p_cel,d_np_cel,d_esp_de_p,d_cel_vec,d_M_int,chp,rc,d_M_param,d_pos,d_eit,d_acel,d_mad_de_p,condper,caja,cajai,invtamcel,nconf);
     Errorcuda(cudaGetLastError(),"PLJ",3);
     Errorcuda(cudaMemcpy(acel,d_acel,sizeof(double)*nd*np,cudaMemcpyDeviceToHost),"a",2);
     if(max_p_en_esp_mr-1)PotencialesDeRestriccion(n_esp_m,max_p_en_esp_mr,n_m_esp_mr,n_p_esp_m,p_en_m,condper,mad_de_p,kres,pos,acel,dis_p_esp_mr_rep,caja,cajai);
@@ -248,7 +248,7 @@ void SimulacionC(uint nc,uint ncp,uint np,uint n_esp_p,uint n_esp_m,uint nparam,
         CalculoCeldas<<<blockspergridcel,threadsperblockcel>>>(np,nmax_p_en_cel,d_np_cel,d_p_cel,d_pos,invtamcel,caja,nceldas);
         Errorcuda(cudaGetLastError(),"Calculo de celdas",3);
         cudaDeviceSynchronize();
-        AceleracionesfFuerzasLJC<<<blockspergrid,threadsperblock,sizeof(double)*nparam>>>(np,nparam,n_esp_p,n_de_cel_vec,nmax_p_en_cel,pot_int,d_p_cel,d_np_cel,d_esp_de_p,d_cel_vec,d_M_int,chp,rc,d_M_param,d_pos,d_eit,d_acel,d_mad_de_p,condper,caja,cajai,invtamcel,nconf);
+        AceleracionesfFuerzasLJC<<<blockspergrid,threadsperblock>>>(np,n_esp_p,n_de_cel_vec,nmax_p_en_cel,pot_int,d_p_cel,d_np_cel,d_esp_de_p,d_cel_vec,d_M_int,chp,rc,d_M_param,d_pos,d_eit,d_acel,d_mad_de_p,condper,caja,cajai,invtamcel,nconf);
         Errorcuda(cudaGetLastError(),"PLJ",3);
         Errorcuda(cudaMemcpy(acel,d_acel,sizeof(double)*nd*np,cudaMemcpyDeviceToHost),"a",2);  
         if(max_p_en_esp_mr-1)PotencialesDeRestriccion(n_esp_m,max_p_en_esp_mr,n_m_esp_mr,n_p_esp_m,p_en_m,condper,mad_de_p,kres,pos,acel,dis_p_esp_mr_rep,caja,cajai);
@@ -276,7 +276,7 @@ void SimulacionC(uint nc,uint ncp,uint np,uint n_esp_p,uint n_esp_m,uint nparam,
                 s_nh_a = s_nh_v*s_nh_v/s_nh_p+g1*s_nh_p/param_termo;
                 s_nh_v+=s_nh_a*0.5*dt;
             }else{
-                Termostato(termos,np,randSeed,temp,temp_d,dt,param_termo,vel);
+                Termostato(termos,np,temp,temp_d,dt,param_termo,vel);
             }
         }
 

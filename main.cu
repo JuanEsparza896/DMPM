@@ -1,6 +1,6 @@
 #include <iostream>
 #include <string>
-#include "DM/SistemaInicial.hpp"
+#include "DM/SistemaInicial.cuh"
 #include "DM/SimulacionSinOptimizaciones.cuh"
 #include "DM/SimulacionVecinos.cuh"
 #include "DM/SimulacionCeldas.cuh"
@@ -114,10 +114,12 @@ int main()
     
     LeerDatosCorrida(dir,nc,ncp,coord,ensamble,termos,pot,cvec,ccel,nhilos,dt,temp,v0,rc,dens,kres,param_termo,vibrante);
     
+    Nparamelec(nparam,pot);
+    
     opt=cvec+2*ccel;
     param = new double[nparam*n_esp_p];
     
-    LeerDatosAtomos(dir,param,nparam,n_esp_p);
+    LeerDatosAtomos(dir,param,pot,n_esp_p);
     
     for(int i=0;i<n_esp_m;i++)
     if(n_p_esp_m[i]>=arr_temp)arr_temp=n_p_esp_m[i];
@@ -134,14 +136,14 @@ int main()
     LeerDatosInteraccion(dir,n_esp_p,M_int);
     LeerDatosInteraccionInterna(dir,n_esp_m,M_int_int);
     if(vibrante)LeerDatosRATTLE(dir,tol,max_it);
-    AbrirArchivos(dir,dens,n_esp_m,n_esp_p,n_m_esp_mr,nparam,ensamble,termos,param_termo,param,ofaedi,ofapin,dpsco,vibrante);
+    AbrirArchivos(dir,dens,n_esp_m,n_esp_p,pot,n_m_esp_mr,ensamble,termos,param_termo,param,ofaedi,ofapin,dpsco,vibrante);
     ImpresionDeDatos(nc,ncp,dt,temp,v0,rc,cvec,ccel,pot,dens,n_esp_m,n_esp_p,ensamble,termos,n_m_esp_mr,n_p_esp_m,esp_p_en_esp_mr,max_p_en_esp_mr,pos_respecto_p_central);
     ImpresionDeDatosADisco(nc,ncp,dt,temp,v0,rc,cvec,ccel,pot,dens,n_esp_m,n_esp_p,ensamble,termos,n_m_esp_mr,n_p_esp_m,esp_p_en_esp_mr,max_p_en_esp_mr,pos_respecto_p_central,ofaedi);
-    celda_min=CreandoCeldaMinima(n_esp_m,pos_respecto_p_central,max_p_en_esp_mr,param,nparam,esp_p_en_esp_mr,n_p_esp_m);
+    celda_min=CreandoCeldaMinima(n_esp_m,pos_respecto_p_central,max_p_en_esp_mr,param,pot,esp_p_en_esp_mr,n_p_esp_m);
     
     double *centrar_m = new double[nd*n_esp_m];
     
-    CentrarMoleculas(centrar_m,n_esp_m,n_p_esp_m,esp_p_en_esp_mr,max_p_en_esp_mr,nparam,param,pos_respecto_p_central);
+    CentrarMoleculas(centrar_m,n_esp_m,n_p_esp_m,esp_p_en_esp_mr,max_p_en_esp_mr,pot,param,pos_respecto_p_central);
     
     esp_p = new uint[np];
     mad_de_p = new uint3[np];
@@ -152,7 +154,7 @@ int main()
     double *dis_p_esp_mr_rep = new double[n_esp_m*max_p_en_esp_mr*max_p_en_esp_mr];
     if(max_p_en_esp_mr>1)p_o_m=true;
     
-    InicializarVelocidades(v0,vel,np,randSeed);
+    InicializarVelocidades(v0,vel,np);
     if(!p_o_m)DistanciasEntreParticulasEnMoleculaIniciales(np,n_esp_m,max_p_en_esp_mr,n_p_esp_m,dis_p_esp_mr_rep,pos_respecto_p_central);
     /*******************************************************************************************************************/
     //Lo usamos para optimizaciones
@@ -162,22 +164,22 @@ int main()
     switch(opt)
     {
         case 0:
-        Simulacion(nc,ncp,nhilos,np,nparam,pot,n_esp_p,n_esp_m,max_p_en_esp_mr,ensamble,termos,randSeed,max_it,mad_de_p,esp_p,
+        Simulacion(nc,ncp,nhilos,np,nparam,pot,n_esp_p,n_esp_m,max_p_en_esp_mr,ensamble,termos,max_it,mad_de_p,esp_p,
                    n_m_esp_mr,n_p_esp_m,M_int,p_en_m,maxhilos,vibrante,memoria_global,dt,dens,kres,temp,param_termo,tol,param,
                    pos,q_rat,vel,acel,dis_p_esp_mr_rep,condper,caja,cajai,ofasres,ofasat);
         break;
         case 1:
-        SimulacionV(nc,ncp,np,n_esp_p,n_esp_m,nparam,pot,max_p_en_esp_mr,ensamble,termos,randSeed,max_it,esp_p,M_int,p_en_m,
+        SimulacionV(nc,ncp,np,n_esp_p,n_esp_m,nparam,pot,max_p_en_esp_mr,ensamble,termos,max_it,esp_p,M_int,p_en_m,
                     n_m_esp_mr,n_p_esp_m,nhilos,maxhilos,vibrante,mad_de_p,condper,rc,rbuf,dens,dt,kres,temp,param_termo,tol,
                     param,pos,vel,acel,q_rat,dis_p_esp_mr_rep,caja,cajai,memoria_global,ofasres,ofasat);
         break;
         case 2:
-        SimulacionC(nc,ncp,np,n_esp_p,n_esp_m,nparam,pot,max_p_en_esp_mr,ensamble,termos,randSeed,max_it,esp_p,M_int,p_en_m,
+        SimulacionC(nc,ncp,np,n_esp_p,n_esp_m,nparam,pot,max_p_en_esp_mr,ensamble,termos,max_it,esp_p,M_int,p_en_m,
                     n_m_esp_mr,n_p_esp_m,nhilos,maxhilos,vibrante,rc,dt,dens,kres,temp,param_termo,tol,param,pos,vel,acel,
                     q_rat,mad_de_p,condper,caja,cajai,dis_p_esp_mr_rep,memoria_global,ofasat,ofasres);
         break;
         case 3:
-        SimulacionVYC(nc,ncp,np,n_esp_p,n_esp_m,nparam,pot,max_p_en_esp_mr,ensamble,termos,randSeed,max_it,esp_p,M_int,p_en_m,
+        SimulacionVYC(nc,ncp,np,n_esp_p,n_esp_m,nparam,pot,max_p_en_esp_mr,ensamble,termos,max_it,esp_p,M_int,p_en_m,
                       n_m_esp_mr,n_p_esp_m,nhilos,maxhilos,vibrante,rc,rbuf,dens,dt,kres,temp,param_termo,tol,param,pos,vel,acel,
                       q_rat,dis_p_esp_mr_rep,mad_de_p,condper,caja,cajai,memoria_global,ofasres,ofasat);
         break;

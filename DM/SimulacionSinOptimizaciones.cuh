@@ -14,7 +14,7 @@
 //Nota, por ahora estoy considerando 2 loops para evitar hacer el calculo de fuerzas y potencial entre particulas que estan en misma molecula, esto evita tambien auto interaccion
 //si la quito parece ser que si hay autointeraccion y eso no me gusta, lo arreglare pronto, segun yo por eso agregue la condicion en la rutina interaccionlj pero no funciona
 
-__global__ void AceleracionesFuerzas(uint n_esp_p,uint nparam,uint pot,uint np,uint3 *m_de_p,uint *esp_de_p,uint *M_int,const double *pos,int chp,double *M_param,double3 caja,double3 cajai,int3 condper,double *epot,double *a,bool nconf)
+__global__ void AceleracionesFuerzas(uint n_esp_p,uint pot,uint np,uint3 *m_de_p,uint *esp_de_p,uint *M_int,const double *pos,int chp,double *M_param,double3 caja,double3 cajai,int3 condper,double *epot,double *a,bool nconf)
 {
     int gid=threadIdx.x+blockDim.x*blockIdx.x;
     gid/=chp;
@@ -82,7 +82,7 @@ __global__ void AceleracionesFuerzas(uint n_esp_p,uint nparam,uint pot,uint np,u
     
 }
 
-void Simulacion(uint nc,uint ncp,uint nhilos,uint np,uint nparam,uint pot,uint n_esp_p,uint n_esp_m,uint max_p_en_esp_mr,uint ensamble,uint termos,uint randSeed,uint max_it,
+void Simulacion(uint nc,uint ncp,uint nhilos,uint np,uint nparam,uint pot,uint n_esp_p,uint n_esp_m,uint max_p_en_esp_mr,uint ensamble,uint termos,uint max_it,
                 uint3 *mad_de_p,uint *esp_de_p,uint *n_m_esp_mr,uint *n_p_esp_m,uint *M_int,uint *p_en_m,int maxhilos,bool vibrante,
                 size_t memoria_global,double dt,double dens,double kres,double temp_d,double param_termo,double tol,double *param,double *pos,double *q_rat,double *vel,
                 double *acel,double *dis_p_esp_mr_rep,int3 condper,double3 caja, double3 cajai,std::ofstream &ofasres,std::ofstream &ofasat)
@@ -160,7 +160,7 @@ void Simulacion(uint nc,uint ncp,uint nhilos,uint np,uint nparam,uint pot,uint n
     
     
 
-    AceleracionesFuerzas<<<blockspergrid,threadsperblock>>>(n_esp_p,nparam,pot,np,d_mad_de_p,d_esp_de_p,d_M_int,d_pos,chp,d_M_param,caja,cajai,condper,d_eit,d_acel,nconf);
+    AceleracionesFuerzas<<<blockspergrid,threadsperblock>>>(n_esp_p,pot,np,d_mad_de_p,d_esp_de_p,d_M_int,d_pos,chp,d_M_param,caja,cajai,condper,d_eit,d_acel,nconf);
     Errorcuda(cudaGetLastError(),"PLJ",3);
 
     //Aqui podria considerar ponerlo en un stream para que se haga est la copia de la aceleraciones y el calculo de energia al mismo tiempo, ya que no dependen los porcesos uno de los otros
@@ -223,7 +223,7 @@ void Simulacion(uint nc,uint ncp,uint nhilos,uint np,uint nparam,uint pot,uint n
         
 
         Errorcuda(cudaMemcpy(d_pos,pos,sizeof(double)*nd*np,cudaMemcpyHostToDevice),"p",1);
-        AceleracionesFuerzas<<<blockspergrid,threadsperblock>>>(n_esp_p,nparam,pot,np,d_mad_de_p,d_esp_de_p,d_M_int,d_pos,chp,d_M_param,caja,cajai,condper,d_eit,d_acel,nconf);
+        AceleracionesFuerzas<<<blockspergrid,threadsperblock>>>(n_esp_p,pot,np,d_mad_de_p,d_esp_de_p,d_M_int,d_pos,chp,d_M_param,caja,cajai,condper,d_eit,d_acel,nconf);
         Errorcuda(cudaGetLastError(),"PLJ",3);
         Errorcuda(cudaMemcpy(acel,d_acel,sizeof(double)*nd*np,cudaMemcpyDeviceToHost),"a",2);
         if((max_p_en_esp_mr-1)&&vibrante)PotencialesDeRestriccion(n_esp_m,max_p_en_esp_mr,n_m_esp_mr,n_p_esp_m,p_en_m,condper,mad_de_p,kres,pos,acel,dis_p_esp_mr_rep,caja,cajai);    
@@ -249,7 +249,7 @@ void Simulacion(uint nc,uint ncp,uint nhilos,uint np,uint nparam,uint pot,uint n
                 s_nh_a = s_nh_v*s_nh_v/s_nh_p+g1*s_nh_p/param_termo;
                 s_nh_v+=s_nh_a*0.5*dt;
             }else{
-                Termostato(termos,np,randSeed,temp,temp_d,dt,param_termo,vel);
+                Termostato(termos,np,temp,temp_d,dt,param_termo,vel);
             }
         }
         if(ic>0 && ic % ncc == 0){
