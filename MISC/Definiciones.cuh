@@ -62,4 +62,15 @@ using str = std::string;
     exit(EXIT_FAILURE);\
 }
 
+#define PAbrioArchivo(arch,farch) if(!farch){std::cout<<"error al abrir archivo "<<arch<<std::endl;exit(EXIT_FAILURE);}
+
+#define Nparamelec(nparam,pot) switch(pot){\
+    case LennardJones:\
+    nparam=nparamLJ;\
+    break;\
+    case Yukawa:\
+    nparam=nparamYkw;\
+    break;\
+}
+
 #endif

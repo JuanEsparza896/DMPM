@@ -13,7 +13,7 @@
 #include "MISC/Definiciones.cuh"
 #include "MISC/OperacionesTDatosCuda.cuh"
 using str=std::string;
-#define PAbrioArchivo(arch,farch) if(!farch){std::cout<<"error al abrir archivo "<<arch<<std::endl;exit(EXIT_FAILURE);}
+
 
 void LeerDatosSistema1(str dir,uint &n_esp_m,uint &n_esp_p)
 {
@@ -183,20 +183,12 @@ void AbrirArchivos(str directorio,double dens, uint nem, uint nea,uint pot, uint
 {
     /*****************************************/
     uint nparam;
-    switch (pot)
-    {
-    case LennardJones:
-        nparam=nparamLJ;
-        break;
-    case Yukawa:
-        nparam=nparamYkw;
-        break;
-    }
     std::stringstream stream;
     std::stringstream *stream1;
     stream1=new std::stringstream[nparam*nea];
     str dpsc1,dpsc,s,aedi,apin;
     /*****************************************/
+    Nparamelec(nparam,pot);
     dpsc1 = directorio + "/Corridas";
     mkdir(dpsc1.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
     
@@ -440,16 +432,7 @@ double3 CreandoCeldaMinima(uint n_esp_m,double3 *pos_respecto_p_central,uint max
     double3 comparador_pos,comparador_neg;
     int k=0;
     /***************************************************************************************/
-    uint nparam;
-    switch (pot)
-    {
-    case LennardJones:
-        nparam=nparamLJ;
-        break;
-    case Yukawa:
-        nparam=nparamYkw;
-        break;
-    }
+    Nparamelec(nparam,pot);
     lon_p=InitDataType3<double3,double>(0.0,0.0,0.0);
     lon_n=InitDataType3<double3,double>(0.0,0.0,0.0);
     
@@ -492,15 +475,7 @@ void CentrarMoleculas(double *centrar_m,uint n_esp_m,uint *n_p_esp_m,
     int k=0;
     uint nparam;
     /*********************/
-    switch (pot)
-    {
-    case LennardJones:
-        nparam=nparamLJ;
-        break;
-    case Yukawa:
-        nparam=nparamYkw;
-        break;
-    }
+    Nparamelec(nparam,pot);
     for(int i=0;i<n_esp_m;i++){
         lon_n=InitDataType3<double3,double>(0.0,0.0,0.0);
         for(int j=0;j<n_p_esp_m[i];j++){
