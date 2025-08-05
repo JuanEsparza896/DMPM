@@ -136,7 +136,7 @@ int main()
     LeerDatosInteraccion(dir,n_esp_p,M_int);
     LeerDatosInteraccionInterna(dir,n_esp_m,M_int_int);
     if(vibrante)LeerDatosRATTLE(dir,tol,max_it);
-    AbrirArchivos(dir,dens,n_esp_m,n_esp_p,pot,n_m_esp_mr,ensamble,termos,param_termo,param,ofaedi,ofapin,dpsco,vibrante);
+    AbrirArchivos(dir,dens,n_esp_m,n_esp_p,pot,n_m_esp_mr,ensamble,termos,nc,param_termo,param,ofaedi,ofapin,dpsco,vibrante);
     ImpresionDeDatos(nc,ncp,dt,temp,v0,rc,cvec,ccel,pot,dens,n_esp_m,n_esp_p,ensamble,termos,n_m_esp_mr,n_p_esp_m,esp_p_en_esp_mr,max_p_en_esp_mr,pos_respecto_p_central);
     ImpresionDeDatosADisco(nc,ncp,dt,temp,v0,rc,cvec,ccel,pot,dens,n_esp_m,n_esp_p,ensamble,termos,n_m_esp_mr,n_p_esp_m,esp_p_en_esp_mr,max_p_en_esp_mr,pos_respecto_p_central,ofaedi);
     celda_min=CreandoCeldaMinima(n_esp_m,pos_respecto_p_central,max_p_en_esp_mr,param,pot,esp_p_en_esp_mr,n_p_esp_m);

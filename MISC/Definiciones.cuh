@@ -26,6 +26,8 @@ correspondiente al tipo de error es el tercero.
 */
 
 #include <string>
+#include <cuda_runtime.h>
+#include <curand_kernel.h>
 using str = std::string;                    
 #define MINBLOCKPERGRID 4                   
 #define FULL_MASK 0xffffffff                
@@ -73,4 +75,14 @@ using str = std::string;
     break;\
 }
 
+#ifdef __WIN32
+#include <direct.h>
+#define MKDIR(path) _mkdir(path)
+#else
+#define MKDIR(path) mkdir(path,0777)
+#endif
+
+void create_directory(const str &path){
+    MKDIR(path.c_str());
+}
 #endif

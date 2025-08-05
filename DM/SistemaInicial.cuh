@@ -181,7 +181,7 @@ void LeerDatosInteraccionInterna(str dir,uint n_esp_m,uint *M_int_int)
     }
     iff.close();
 }
-void AbrirArchivos(str directorio,double dens, uint nem, uint nea,uint pot, uint *nme,uint ensamble,uint termo,double param_termo, double *param,std::ofstream &ofaedi,std::ofstream &ofapin,str &dpsco,bool vibrante)
+void AbrirArchivos(str directorio,double dens, uint nem, uint nea,uint pot, uint *nme,uint ensamble,uint termo,uint nc,double param_termo, double *param,std::ofstream &ofaedi,std::ofstream &ofapin,str &dpsco,bool vibrante)
 {
     /*****************************************/
     uint nparam;
@@ -192,7 +192,8 @@ void AbrirArchivos(str directorio,double dens, uint nem, uint nea,uint pot, uint
     Nparamelec(nparam,pot);
     stream1=new std::stringstream[nparam*nea];
     dpsc1 = directorio + "/Corridas";
-    mkdir(dpsc1.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+    
+    create_directory(dpsc1.c_str());
     
     dpsc = dpsc1;
     if(ensamble==0){
@@ -245,12 +246,13 @@ void AbrirArchivos(str directorio,double dens, uint nem, uint nea,uint pot, uint
             s = stream1[nparam*j+i].str();
             dpsc += s;    
         }
+    dpsc += "_nc_"+std::to_string(nc);
 
     std::cout << "LOS ARCHIVOS DE ESTA CORRIDA SE GUARDAN EN: " << dpsc << std::endl;
     
-    mkdir(dpsc.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+    create_directory(dpsc.c_str());
     dpsco = dpsc+"/Resultados";
-    mkdir(dpsco.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+    create_directory(dpsco.c_str());
 
     aedi = dpsc + "/DatosIniciales.txt";
     apin = dpsc + "/Posiciones_Iniciales.txt";
