@@ -75,19 +75,21 @@ void LeerDatosCorrida(str dir,uint &nc,uint &ncp,uint &coord,uint &ensamble,uint
     iff.close();
 }
 
-void LeerDatosAtomos(str dir,double *param,uint n_param,uint n_esp_p)
+void LeerDatosAtomos(str dir,double *param,uint pot,uint n_esp_p)
 {
     /*esta rutina asume que siempre el dato que esta en la primera columna de este archivo es el diametro de la especie atomica */
     str f=dir+"/Datos/Datos_Atomos.txt";
     str tp;
+    uint nparam;
+    Nparamelec(nparam,pot);
     double temporal;
     std::ifstream iff(f);
     PAbrioArchivo(f,iff);
     iff >> tp;iff >> tp;
     for(int j=0;j<n_esp_p;j++)
-        for(int i=0;i<n_param;i++){
+        for(int i=0;i<nparam;i++){
             iff >> temporal;
-            param[n_param*j+i]=temporal;    
+            param[nparam*j+i]=temporal;    
         }
     iff.close();
 }
@@ -185,10 +187,10 @@ void AbrirArchivos(str directorio,double dens, uint nem, uint nea,uint pot, uint
     uint nparam;
     std::stringstream stream;
     std::stringstream *stream1;
-    stream1=new std::stringstream[nparam*nea];
     str dpsc1,dpsc,s,aedi,apin;
     /*****************************************/
     Nparamelec(nparam,pot);
+    stream1=new std::stringstream[nparam*nea];
     dpsc1 = directorio + "/Corridas";
     mkdir(dpsc1.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
     
@@ -565,11 +567,10 @@ void ConfiguracionCubica(uint n_esp_m,uint *m_de_esp_mr,uint *p_en_esp_mr,uint *
     }
 }
 
-void InicializarVelocidades(double v0,double *v,int np,uint randSeed)
+void InicializarVelocidades(double v0,double *v,int np)
 {
     double r;
-    uint num=randSeed;
-    if(randSeed==0)num=time(NULL);
+    uint num=time(NULL);
     srand(num);
       for(int ip=0; ip<np; ip++)
       {
