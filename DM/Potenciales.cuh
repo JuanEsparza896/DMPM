@@ -1,6 +1,6 @@
 #ifndef HEADER_POT
 #define HEADER_POT
-#include "MISC/Definiciones.cuh"
+#include "../MISC/Definiciones.cuh"
 
 void CalculoParamLJ(uint n_esp_p,uint nparam,double *param,double *M_param)
 {
@@ -47,34 +47,24 @@ __device__ __forceinline__ double2 InteraccionLJ(int i, int j,uint n_esp_p,uint 
 
 __device__ __forceinline__ double2 InteraccionYukawa(int i, int j,uint n_esp_p,uint elem_M,double dis, double *M_param,bool nconf,bool eshift,double r2c=0.0)
 {
+    //[1]
     double apot=0.;
-    double2 fuepotshift,val;
+    double2 val;
     bool gidj=i-j;
 
     double d2=gidj?(1./dis):0.;
-    double ee = exp(-k * s * (dis / s - 1));
+    double ee = exp(-M_param[4*n_esp_p*n_esp_p+elem_M] * M_param[n_esp_p*n_esp_p+elem_M] * (dis / M_param[n_esp_p*n_esp_p+elem_M] - 1));
 
-    double  fue= n * dis * pow((s / dis),n);
-            fue+= qi * qj * (1 + k * dis) * (e * s) * ee;
+    double  fue= M_param[5*n_esp_p*n_esp_p+elem_M] * dis * pow((M_param[n_esp_p*n_esp_p+elem_M] / dis),M_param[5*n_esp_p*n_esp_p+elem_M]);
+            fue+= M_param[2*n_esp_p*n_esp_p+elem_M] * M_param[3*n_esp_p*n_esp_p+elem_M] * (1 + M_param[4*n_esp_p*n_esp_p+elem_M] * dis) * (M_param[elem_M] * M_param[n_esp_p*n_esp_p+elem_M]) * ee;
             fue /= dis*dis;
     
     if(nconf){
-        apot=pow((s *d2),n) + qi * qj * (e * s *d2) * ee;
+        apot=pow((M_param[n_esp_p*n_esp_p+elem_M] *d2),M_param[5*n_esp_p*n_esp_p+elem_M]) + M_param[2*n_esp_p*n_esp_p+elem_M] * M_param[3*n_esp_p*n_esp_p+elem_M] * (M_param[elem_M] * M_param[n_esp_p*n_esp_p+elem_M] *d2) * ee;
     }
     
     val.x=fue;
     val.y=apot;
-    if(eshift&&gidj){
-        /*
-        Por ahora no hay shift en el potencial
-        d2=1/r2c;
-        d6=d2*d2*d2;
-        d12=d6*d6;
-        fuepotshift.x=6.0*(M_param[n_esp_p*n_esp_p + elem_M]*2.0*d12-M_param[elem_M]*d6)*d2;
-        fuepotshift.y=M_param[n_esp_p*n_esp_p + elem_M]*d12-M_param[elem_M]*d6;
-        val.x+=fuepotshift.x;
-        val.y+=fuepotshift.y;*/
-    }
     return val;
 }
 
@@ -109,3 +99,14 @@ __device__ __forceinline__ double2 Interaccion(uint pot,uint n_esp_p,uint elem_M
 }
 
 #endif
+
+/*
+Notas:
+
+Definición del potencial de yukawa
+V(r,e,s,qi,qj,k,n) = 
+    (s/r)^n+qi*qj*(e*s/r)*exp(-k*s*(r/s-1))
+Definición de la fuerza de Yukawa
+F(r,e,s,qi,qj,k,n) = 
+(n*r*(s/r)^n)+qi*qj*(1+k*r)*(e*s)*exp(-k*s*(r/s-1))/r²
+*/

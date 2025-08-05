@@ -2,8 +2,8 @@
 #define OPTIM_HEADER
 
 #include <stdio.h>
-#include "MISC/OperacionesTDatosCuda.cuh"
-#include "MISC/Definiciones.cuh"
+#include "../MISC/OperacionesTDatosCuda.cuh"
+#include "../MISC/Definiciones.cuh"
 #include "FuncCompSim.cuh"
 
 

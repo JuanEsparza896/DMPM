@@ -33,7 +33,7 @@ using str = std::string;
 #define LennardJones 1
 #define nparamLJ 2
 #define Yukawa 2
-#define nparamYkw 3
+#define nparamYkw 6
 #define CARTESIANAS 0
 #define POLARES 1
 

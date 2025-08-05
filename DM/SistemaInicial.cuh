@@ -10,8 +10,8 @@
 #include <sstream>
 #include <stdlib.h>
 #include <time.h>
-#include "MISC/Definiciones.cuh"
-#include "MISC/OperacionesTDatosCuda.cuh"
+#include "../MISC/Definiciones.cuh"
+#include "../MISC/OperacionesTDatosCuda.cuh"
 using str=std::string;
 
 

@@ -3,13 +3,13 @@
 
 #include <stdio.h>
 
-#include "MISC/OperacionesTDatosCuda.cuh"
-#include "MISC/OperacionesDeHilosyBloques.cuh"
+#include "../MISC/OperacionesTDatosCuda.cuh"
+#include "../MISC/OperacionesDeHilosyBloques.cuh"
 #include "Potenciales.cuh"
 #include "Termostatos.hpp"
 #include "PotencialesRestriccion.cuh"
 #include "rattle.cuh"
-#include "MISC/PropGPU.cuh"
+#include "../MISC/PropGPU.cuh"
 
 //Nota, por ahora estoy considerando 2 loops para evitar hacer el calculo de fuerzas y potencial entre particulas que estan en misma molecula, esto evita tambien auto interaccion
 //si la quito parece ser que si hay autointeraccion y eso no me gusta, lo arreglare pronto, segun yo por eso agregue la condicion en la rutina interaccionlj pero no funciona

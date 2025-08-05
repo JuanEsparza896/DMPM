@@ -1,7 +1,7 @@
 #ifndef POT_REST_HEADER
 #define POT_REST_HEADER
 
-#include "MISC/Definiciones.cuh"
+#include "../MISC/Definiciones.cuh"
 #include "FuncCompSim.cuh"
 
 void RestriccionLongitudEnlace1(uint part,uint j,int3 condper,double kres,double *pos,double *acel,double dist_rep,double3 caja,double3 cajai)

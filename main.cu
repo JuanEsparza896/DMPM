@@ -94,7 +94,7 @@ int main()
             
     Inicializacion del sistema
     *******************************************************************************************************************/
-    dir="/home/lalo/DMPM";
+    dir="/home/gach/DMPM";
     condper=InitDataType3<int3,int>(1,1,1);
     PropiedadesGPU(maxhilos,memoria_global);
     LeerDatosSistema1(dir,n_esp_m,n_esp_p);

@@ -1,8 +1,8 @@
 #ifndef TERMOSTATOS_HEADER
 #define TERMOSTATOS_HEADER
-#include "MISC/Definiciones.cuh"
+#include "../MISC/Definiciones.cuh"
 #include "FuncCompSim.cuh"
-#include "MISC/FuncCompDeSimulacionMisc.h"
+#include "../MISC/FuncCompDeSimulacionMisc.h"
 #include <stdlib.h>
 #include <time.h>
 #include <random>

@@ -1,9 +1,9 @@
 #ifndef RATTLE_HEADER
 #define RATTLE_HEADER
 
-#include "MISC/Definiciones.cuh"
+#include "../MISC/Definiciones.cuh"
 #include "FuncCompSim.cuh"
-#include "MISC/FuncCompDeSimulacionMisc.h"
+#include "../MISC/FuncCompDeSimulacionMisc.h"
 
 void RattlePos(uint max_it,uint n_esp_m,uint np,uint max_p_en_esp_mr,uint *n_p_esp_m,uint *n_m_esp_mr,uint *p_en_m,uint3 *mad_de_p,int3 condper,double tol,double dt,double *pos,double *q_rat,double *dis_p_esp_mr_rep,double3 caja,double3 cajai)
 {

@@ -3,13 +3,13 @@
 
 
 
-#include "MISC/OperacionesDeHilosyBloques.cuh"
+#include "../MISC/OperacionesDeHilosyBloques.cuh"
 #include "Potenciales.cuh"
 #include "Optimizaciones.cuh"
 #include "PotencialesRestriccion.cuh"
 #include "Termostatos.hpp"
 #include "rattle.cuh"
-#include "MISC/PropGPU.cuh"
+#include "../MISC/PropGPU.cuh"
 
 __global__ void AceleracionesfFuerzasLJC(uint np,uint n_esp_p,uint n_de_cel_vec,uint nmax_p_en_cel,uint pot_int,uint *p_en_cel,uint *np_cel,uint *esp_de_p,uint *cel_vec,uint *M_int,int chp,double rc,double *M_param,double *pos,double *epot,double *acel,uint3 *mad_de_p,int3 condper,double3 caja,double3 cajai,double3 invtamcel,bool nconf)
 {
