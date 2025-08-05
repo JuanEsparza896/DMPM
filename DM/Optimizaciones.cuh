@@ -2,9 +2,11 @@
 #define OPTIM_HEADER
 
 #include <stdio.h>
-#include "OperacionesTDatosCuda.cuh"
-#include "Definiciones.cuh"
-#include "Funcionescompartidas.h"
+#include "MISC/OperacionesTDatosCuda.cuh"
+#include "MISC/Definiciones.cuh"
+#include "FuncCompSim.cuh"
+
+
 /**************************************************************************************************************************************************/
 //Vecinos
 
@@ -46,14 +48,14 @@ __global__ void CalculoDeVecinos(uint np,uint n_esp_p,uint *M_int,uint *esp_de_p
     piy=__ldg(p+3*particula+1);
     piz=__ldg(p+3*particula+2);
     esp1=esp_de_p[particula];
-    double3 pi=InitDataType3<double3>(pix,piy,piz);
+    double3 pi=InitDataType3<double3,double>(pix,piy,piz);
     double3 pj,dif;
     for(int j=lane;j<np;j+=chp){
         pjx=__ldg(p+3*j);
         pjy=__ldg(p+3*j+1);
         pjz=__ldg(p+3*j+2);
         esp2=esp_de_p[j];
-        pj=InitDataType3<double3>(pjx,pjy,pjz);
+        pj=InitDataType3<double3,double>(pjx,pjy,pjz);
         dif.x=pi.x-pj.x;
         dif.y=pi.y-pj.y;
         dif.z=pi.z-pj.z;
@@ -244,7 +246,7 @@ __global__ void CalculoDeVecinosConCeldas(uint np,uint n_de_cel_vec,uint nmax_p_
     piy=__ldg(p+3*particula+1);
     piz=__ldg(p+3*particula+2);
     esp1=esp_de_p[particula];
-    pi=InitDataType3<double3>(pix,piy,piz);
+    pi=InitDataType3<double3,double>(pix,piy,piz);
     
     if(pix==caja.x&&piy==caja.y&&piz==caja.z)celda=0;
     pos.x=pix*invtamcel.x;
@@ -262,7 +264,7 @@ __global__ void CalculoDeVecinosConCeldas(uint np,uint n_de_cel_vec,uint nmax_p_
             pjy = __ldg(p+3*j+1);
             pjz = __ldg(p+3*j+2);
             esp2=esp_de_p[j];
-            pj = InitDataType3<double3>(pjx,pjy,pjz);
+            pj = InitDataType3<double3,double>(pjx,pjy,pjz);
             dif.x=pi.x-pj.x;
             dif.y=pi.y-pj.y;
             dif.z=pi.z-pj.z;

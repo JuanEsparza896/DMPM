@@ -37,24 +37,4 @@ int HilosPorParticula(int nhilos)
     return chp;
 }
 
-void PropiedadesGPU(int &maxhilosporbloque, size_t &memoria_global)
-{
-    printf("\nPropiedades del device:\n");
-    cudaDeviceProp prop;
-    cudaGetDeviceProperties(&prop,0);
-    printf("Device:%s\n",prop.name);
-    maxhilosporbloque=prop.maxThreadsPerBlock;
-    printf("Compute Capability: %d.%d\n",prop.major,prop.minor);
-    printf("tamano de un warp: %d\n",prop.warpSize);
-    printf("Numero de hilos pro bloque maximo: %d\n",maxhilosporbloque);
-    memoria_global=prop.totalGlobalMem;
-    printf("Memoria global total %zu bytes\n\n",memoria_global);
-}
-
-void OcupacionDeMemoriaGlobal(size_t memoria_arreglos,size_t memoria_global)
-{
-    double porcentaje_memoria=(memoria_arreglos/memoria_global)*100;
-    printf("Memoria Global utilizada en arreglos: %zu\nPorcentaje de la memoria global total: %lf\n",memoria_arreglos,porcentaje_memoria);
-    printf("-----------------------------------------------\n");
-}
 #endif

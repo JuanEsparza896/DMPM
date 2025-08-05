@@ -8,8 +8,10 @@
 #include <sys/stat.h>
 #include <iomanip>
 #include <sstream>
-#include "Definiciones.cuh"
-#include "OperacionesTDatosCuda.cuh"
+#include <stdlib.h>
+#include <time.h>
+#include "MISC/Definiciones.cuh"
+#include "MISC/OperacionesTDatosCuda.cuh"
 using str=std::string;
 #define PAbrioArchivo(arch,farch) if(!farch){std::cout<<"error al abrir archivo "<<arch<<std::endl;exit(EXIT_FAILURE);}
 
@@ -45,29 +47,34 @@ void LeerDatosSistema2(str dir,uint n_esp_m,uint n_esp_p,uint *n_m_esp_mr,uint *
     }
     iff.close();
 }
-void LeerDatosCorrida(str dir,uint &nc,uint &ncp,double &dt,double &temp,double &v0,double &rc,double &dens,uint &pot,int &cvec,int &ccel,int &nhilos,bool &vibrante,uint &nparam)
+void LeerDatosCorrida(str dir,uint &nc,uint &ncp,uint &coord,uint &ensamble,uint &termos,uint &pot,int &cvec,int &ccel,int &nhilos,double &dt,double &temp,double &v0,double &rc,double &dens,double &kres,double &param_termo,bool &vibrante)
 {
     str f=dir+"/Datos/Datos_Corrida.txt";
     str tp;
     std::ifstream iff(f);
     uint tmp;
     PAbrioArchivo(f,iff);
-    iff >> nc; iff >> tp;
-    iff >> ncp; iff >> tp;
-    iff >> dt; iff >> tp;
-    iff >> temp; iff >> tp;
-    iff >> v0; iff >> tp;
-    iff >> rc; iff >> tp;
-    iff >> dens; iff >> tp;
-    iff >> pot; iff >> tp;
-    iff >> nhilos; iff >> tp;
-    iff >> cvec; iff >> tp;
-    iff >> ccel; iff >> tp;
-    iff >> tmp; iff >> tp;
+    iff >> nc;          iff >> tp;
+    iff >> ncp;         iff >> tp;
+    iff >> dt;          iff >> tp;
+    iff >> temp;        iff >> tp;
+    iff >> v0;          iff >> tp;
+    iff >> rc;          iff >> tp;
+    iff >> dens;        iff >> tp;
+    iff >> pot;         iff >> tp;
+    iff >> nhilos;      iff >> tp;
+    iff >> cvec;        iff >> tp;
+    iff >> ccel;        iff >> tp;
+    iff >> coord;       iff >> tp;
+    iff >> ensamble;    iff >> tp;
+    iff >> termos;      iff >> tp;
+    iff >> param_termo; iff >> tp;
+    iff >> tmp;         iff >> tp;
     if(tmp)vibrante=true;
-    iff >> nparam; iff >> tp;
+    iff >> kres;        iff >> tp;
     iff.close();
 }
+
 void LeerDatosAtomos(str dir,double *param,uint n_param,uint n_esp_p)
 {
     /*esta rutina asume que siempre el dato que esta en la primera columna de este archivo es el diametro de la especie atomica */
@@ -84,14 +91,13 @@ void LeerDatosAtomos(str dir,double *param,uint n_param,uint n_esp_p)
         }
     iff.close();
 }
-void LeerDatosMoleculas(str dir,uint n_esp_m,uint *n_p_esp_m,uint *esp_p_en_esp_mr,uint max_p_en_esp_mr,double3 *pos_respecto_p_central)
+void LeerDatosMoleculas(str dir,uint n_esp_m,uint coord,uint *n_p_esp_m,uint *esp_p_en_esp_mr,uint max_p_en_esp_mr,double3 *pos_respecto_p_central)
 {
-    //Nota este arreglo esp_p_en_esp_mr se debe borrar y reemplazar por otro ya que si el maximo y minimo de particulas en especies moleculares es grande se desperdicia mucho espacio
-    //Nota2 no es cierto, este arreglo se borra ya que es remplazado por un arreglo de tamaño np donde viene la especie de cada particula
+    const double pi=2*acos(0.);
     uint tui;
     str f=dir+"/Datos/Datos_Moleculas.txt";
     str tp;
-    double temporal;
+    double temporal,t1,t2,t3;
     std::ifstream iff(f);
     PAbrioArchivo(f,iff);
     iff >> tp;iff >> tp;iff >> tp;
@@ -100,13 +106,24 @@ void LeerDatosMoleculas(str dir,uint n_esp_m,uint *n_p_esp_m,uint *esp_p_en_esp_
         for(int j=0;j<n_p_esp_m[i];j++){
             iff >> tui;
             esp_p_en_esp_mr[max_p_en_esp_mr*i+j]=tui;
-            iff >> temporal;pos_respecto_p_central[max_p_en_esp_mr*i+j].x=temporal;
-            iff >> temporal;pos_respecto_p_central[max_p_en_esp_mr*i+j].y=temporal;
-            iff >> temporal;pos_respecto_p_central[max_p_en_esp_mr*i+j].z=temporal;
+            if(coord == CARTESIANAS){
+                iff >> temporal;pos_respecto_p_central[max_p_en_esp_mr*i+j].x=temporal;
+                iff >> temporal;pos_respecto_p_central[max_p_en_esp_mr*i+j].y=temporal;
+                iff >> temporal;pos_respecto_p_central[max_p_en_esp_mr*i+j].z=temporal;
+            }
+            if(coord==POLARES){
+                iff >>t1;iff >>t2;iff >>t3;
+                t2*=pi/180.;
+                t3*=pi/180.;
+                pos_respecto_p_central[max_p_en_esp_mr*i+j].x=t1*sin(t2)*cos(t3);
+                pos_respecto_p_central[max_p_en_esp_mr*i+j].y=t1*sin(t2)*sin(t3);
+                pos_respecto_p_central[max_p_en_esp_mr*i+j].z=t1*cos(t2);
+            }
         }
     }
     iff.close();
 }
+
 void LeerDatosInteraccion(str dir,uint n_esp_p,uint *M_int)
 {
     str f=dir+"/Datos/Datos_Interaccion.txt";
@@ -127,8 +144,22 @@ void LeerDatosInteraccion(str dir,uint n_esp_p,uint *M_int)
     iff.close();
 }
 
+void LeerDatosRATTLE(str dir,double &tol,uint &max_it)
+{
+    /*esta rutina asume que siempre el dato que esta en la primera columna de este archivo es el diametro de la especie atomica */
+    str f=dir+"/Datos/Datos_RATTLE.txt";
+    str tp;
+    std::ifstream iff(f);
+    PAbrioArchivo(f,iff);
+    iff >> tol;iff >> tp;
+    iff >> max_it;iff >> tp;
+    iff.close();
+}
+
 void LeerDatosInteraccionInterna(str dir,uint n_esp_m,uint *M_int_int)
 {
+    //!Esta rutina por ahora no sirve pues solo hay constricciones y restricciones de distancia entre
+    //!todas las particulas que componen una molécula, despues se elige que particulas si enteractuan entre si o no
     str f=dir+"/Datos/InteraccionInterna.txt";
     str tp;
     std::ifstream iff(f);
@@ -142,15 +173,25 @@ void LeerDatosInteraccionInterna(str dir,uint n_esp_m,uint *M_int_int)
         {
             iff >> tmp;
             M_int_int[n_esp_m*i+j]=tmp;
-            printf("Interaccion %d: ");
+            printf("Interaccion %d: ",j);
             if(tmp)printf("Activa\n"); else printf("Inactiva\n"); 
         }
     }
     iff.close();
 }
-void AbrirArchivos(str directorio,double dens, uint nem, uint nea, uint *nme, uint nparam, double *param,std::ofstream &ofaedi,std::ofstream &ofapin,str &dpsco)
+void AbrirArchivos(str directorio,double dens, uint nem, uint nea,uint pot, uint *nme,uint ensamble,uint termo,double param_termo, double *param,std::ofstream &ofaedi,std::ofstream &ofapin,str &dpsco,bool vibrante)
 {
     /*****************************************/
+    uint nparam;
+    switch (pot)
+    {
+    case LennardJones:
+        nparam=nparamLJ;
+        break;
+    case Yukawa:
+        nparam=nparamYkw;
+        break;
+    }
     std::stringstream stream;
     std::stringstream *stream1;
     stream1=new std::stringstream[nparam*nea];
@@ -160,10 +201,38 @@ void AbrirArchivos(str directorio,double dens, uint nem, uint nea, uint *nme, ui
     mkdir(dpsc1.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
     
     dpsc = dpsc1;
+    if(ensamble==0){
+        dpsc+="/NVE";
+    }else{
+        stream << std::fixed << std::setprecision(2) << param_termo;
+        s = stream.str();
+        dpsc+="/NVT_";
+        switch (termo)
+        {
+        case 0:
+            dpsc+="VRes"+s;
+            break;
+        case 1:
+            dpsc+="And_"+s;
+            break;
+        case 2:
+            dpsc+="Ber_"+s;
+            break;
+        case 3:
+            dpsc+="BDP_"+s;
+            break;
+        case 4:
+            dpsc+="NH_"+s;
+            break;
+        }
+    }
+
+    if(vibrante){dpsc+="_vib";}else{dpsc+="_rig";}
+    
     
     stream << std::fixed << std::setprecision(2) << dens;
     s = stream.str();
-    dpsc += "/dens_"+ s;
+    dpsc += "_dens_"+ s;
     dpsc += "_nd_" + std::to_string(nd) + "_nem_" + std::to_string(nem) + "_nea_" + std::to_string(nea);
 
     for(int i=0;i<nem;i++){
@@ -198,15 +267,37 @@ void AbrirArchivos(str directorio,double dens, uint nem, uint nea, uint *nme, ui
 
 void ImpresionDeDatos(int nc,int ncp,double dt,double temp,double v0,double rc,bool optvec,
                       bool optcel,uint pot,double dens,uint n_esp_m,uint especies_atomicas,
-                      uint *m_de_esp_mr,uint *p_en_esp_mr, uint *esp_de_p_en_m,
-                      uint max_p_en_esp_mr,double3 *pos_respecto_p_central)
+                      uint ensamble,uint termos,uint *m_de_esp_mr,uint *p_en_esp_mr, 
+                      uint *esp_de_p_en_m,uint max_p_en_esp_mr,double3 *pos_respecto_p_central)
 {
     int ncc=nc/ncp;
     printf("\n---------------------------------------------------------------------------\n\n");
     printf("Datos de Corrida:\n\n");
     printf("Configuraciones: %d\nCada cuantas configuraciones imprimimos propiedades:%d\n",nc,ncc);
     printf("Tamaño del paso de integracion: %.3lf\n",dt);
-    printf("Temperatura a la que se debe mantener el sistema (CASO NVT): %.1lf\n",temp);
+    printf("Ensamble: ");if(!ensamble){printf("NVE\n");}else{printf("NVT\n");}
+    if(ensamble){
+        printf("Temperatura a la que se debe mantener el sistema (CASO NVT): %.1lf\n",temp);
+        printf("Termostato: ");
+        switch (termos)
+        {
+        case 0:
+            printf("Reescalamiento de velocidades\n");
+            break;
+        case 1:
+            printf("Andersen\n");
+            break;
+        case 2:
+            printf("Berendsen\n");
+            break;
+        case 3:
+            printf("Bussi-Donaldio-Parinello\n");
+            break;
+        case 4:
+            printf("Nose-Hoover\n");
+            break;
+        }
+    }
     printf("Rapidez inicial maxima de las particulas: %.1lf\n",v0);
     printf("Radio de corte (en caso de optimizaciones): %.1lf\n",rc);
     printf("Optimizacion de vecinos: ");
@@ -237,8 +328,8 @@ void ImpresionDeDatos(int nc,int ncp,double dt,double temp,double v0,double rc,b
 }
 
 void ImpresionDeDatosADisco(int nc,int ncp,double dt,double temp,double v0,double rc,bool optvec,
-                            bool optcel,uint pot,double dens,uint n_esp_m,uint n_esp_p,
-                            uint *m_de_esp_mr,uint *p_en_esp_mr,uint *esp_de_p_en_m,
+                            bool optcel,uint pot,double dens,uint n_esp_m,uint n_esp_p,uint ensamble,
+                            uint termos,uint *m_de_esp_mr,uint *p_en_esp_mr,uint *esp_de_p_en_m,
                             uint max_p_en_esp_mr,double3 *pos_respecto_p_central,std::ofstream &ofaedi)
 {
     /**************/
@@ -247,7 +338,30 @@ void ImpresionDeDatosADisco(int nc,int ncp,double dt,double temp,double v0,doubl
     ofaedi << "Datos de Corrida:\n\n";
     ofaedi << "Configuraciones: " << nc << "\nCada cuantas configuraciones imprimimos propiedades:" << ncc << "\n";
     ofaedi << "Tamaño del paso de integracion:" << std::setprecision(3) << dt << "\n";
-    ofaedi << "Temperatura a la que se debe mantener el sistema (CASO NVT):" << std::setprecision(2) << temp << "\n";
+    ofaedi << "Ensamble: ";if(!ensamble){ofaedi<< "NVE\n";}else{ofaedi << "NVT\n";}
+    if(ensamble){
+        ofaedi << "Temperatura a la que se debe mantener el sistema (CASO NVT):" << std::setprecision(2) << temp << "\n";
+        ofaedi << "Termostato: ";
+        switch (termos)
+        {
+        case 0:
+            ofaedi << "Reescalamiento de velocidades\n";
+            break;
+        case 1:
+            ofaedi << "Andersen\n";
+            break;
+        case 2:
+            ofaedi << "Berendsen\n";
+            break;
+        case 3:
+            ofaedi << "Bussi-Donaldio-Parinello\n";
+            break;
+        case 4:
+            ofaedi << "Nose-Hoover\n";
+            break;
+        }
+    }
+    
     ofaedi << "Rapidez inicial maxima de las particulas:" << std::setprecision(2) << v0 << "\n";
     ofaedi << "Radio de corte (en caso de optimizaciones):" << std::setprecision(2) << rc << "\n";
     ofaedi << "Optimizacion de vecinos: ";
@@ -294,7 +408,7 @@ void ArchivosDeResultados(str dpsco,std::ofstream &ofasres,std::ofstream &ofasat
 }
 
 double3 CreandoCeldaMinima(uint n_esp_m,double3 *pos_respecto_p_central,uint max_p_en_esp_mr,
-                           double *param, uint nparam,uint *especies_de_atomos_en_molecula,uint *atomos_en_especie_molecular)
+                           double *param, uint pot,uint *especies_de_atomos_en_molecula,uint *atomos_en_especie_molecular)
 {
     
     /*
@@ -316,13 +430,26 @@ double3 CreandoCeldaMinima(uint n_esp_m,double3 *pos_respecto_p_central,uint max
         menor que lxn tenemos nueva lxn.
 
         !Estas celdas unitarias son mejores cuando las moleculas son monodispersas.
+        !Un caso límite es posible en este caso, revisar el archivo para entenderlo
+        !con una posible solucion
     */
-
+ 
     /***************************************************************************************/
+    uint nparam=1;
     double3 lon_p,lon_n;
     double3 comparador_pos,comparador_neg;
     int k=0;
     /***************************************************************************************/
+    uint nparam;
+    switch (pot)
+    {
+    case LennardJones:
+        nparam=nparamLJ;
+        break;
+    case Yukawa:
+        nparam=nparamYkw;
+        break;
+    }
     lon_p=InitDataType3<double3,double>(0.0,0.0,0.0);
     lon_n=InitDataType3<double3,double>(0.0,0.0,0.0);
     
@@ -351,27 +478,29 @@ double3 CreandoCeldaMinima(uint n_esp_m,double3 *pos_respecto_p_central,uint max
 }
 
 void CentrarMoleculas(double *centrar_m,uint n_esp_m,uint *n_p_esp_m,
-                      uint *esp_p_en_esp_mr,uint max_p_en_esp_mr,uint nparam,
+                      uint *esp_p_en_esp_mr,uint max_p_en_esp_mr,uint pot,
                       double *param,double3 *pos_respecto_p_central)
 {
     
     /*
-        [2]
-
-        Supongamos 2 especies moleculares, una tiene todas sus 
-        particulas a la derecha respecto a su atomo central, y 
-        la otra a la izquierda, entonces, inicialmente podemos 
-        tener traslapes, lo que hace esta rutina es recorrer 
-        las moleculas de forma que quepan dentro de la celda 
-        unitaria.    
+        !revisar archivo de casos límite para entender porque existe esta rutina
     */
 
     /*********************/
     double3 lon_n;
     double3 comparador_neg;
     int k=0;
+    uint nparam;
     /*********************/
-    
+    switch (pot)
+    {
+    case LennardJones:
+        nparam=nparamLJ;
+        break;
+    case Yukawa:
+        nparam=nparamYkw;
+        break;
+    }
     for(int i=0;i<n_esp_m;i++){
         lon_n=InitDataType3<double3,double>(0.0,0.0,0.0);
         for(int j=0;j<n_p_esp_m[i];j++){
@@ -461,10 +590,12 @@ void ConfiguracionCubica(uint n_esp_m,uint *m_de_esp_mr,uint *p_en_esp_mr,uint *
     }
 }
 
-void InicializarVelocidades(double v0,double *v,int np)
+void InicializarVelocidades(double v0,double *v,int np,uint randSeed)
 {
     double r;
-    srand(1);
+    uint num=randSeed;
+    if(randSeed==0)num=time(NULL);
+    srand(num);
       for(int ip=0; ip<np; ip++)
       {
           for(int id=0;id<nd;id++){
@@ -475,19 +606,22 @@ void InicializarVelocidades(double v0,double *v,int np)
 
 }
 
-void DistanciasEntreParticulasEnMoleculaIniciales(uint np,uint n_esp_m,uint max_p_en_esp_mr,uint *n_p_esp_mr,double3 *dis_p_esp_mr_rep,double3 *pos_respecto_p_central)
+void DistanciasEntreParticulasEnMoleculaIniciales(uint np,uint n_esp_m,uint max_p_en_esp_mr,uint *n_p_esp_mr,double *dis_p_esp_mr_rep,double3 *pos_respecto_p_central)
 {
-
+    /*
+    Sirve para RATTLE y en caso de usar potencial de Hooke como restricción.
+    */
     for(int i=0;i<n_esp_m;i++){
         for(int j=0;j<n_p_esp_mr[i];j++){
             for(int k=0;k<n_p_esp_mr[i];k++){
-                dis_p_esp_mr_rep[i*max_p_en_esp_mr*max_p_en_esp_mr+j*max_p_en_esp_mr+k].x = pos_respecto_p_central[max_p_en_esp_mr*i+j].x - pos_respecto_p_central[max_p_en_esp_mr*i+k].x;
-                dis_p_esp_mr_rep[i*max_p_en_esp_mr*max_p_en_esp_mr+j*max_p_en_esp_mr+k].y = pos_respecto_p_central[max_p_en_esp_mr*i+j].y - pos_respecto_p_central[max_p_en_esp_mr*i+k].y;
-                dis_p_esp_mr_rep[i*max_p_en_esp_mr*max_p_en_esp_mr+j*max_p_en_esp_mr+k].z = pos_respecto_p_central[max_p_en_esp_mr*i+j].z - pos_respecto_p_central[max_p_en_esp_mr*i+k].z;        
+                dis_p_esp_mr_rep[i*max_p_en_esp_mr*max_p_en_esp_mr+j*max_p_en_esp_mr+k] = 0.;
+                dis_p_esp_mr_rep[i*max_p_en_esp_mr*max_p_en_esp_mr+j*max_p_en_esp_mr+k] = pow(( pos_respecto_p_central[max_p_en_esp_mr*i+j].x - pos_respecto_p_central[max_p_en_esp_mr*i+k].x ),2);
+                dis_p_esp_mr_rep[i*max_p_en_esp_mr*max_p_en_esp_mr+j*max_p_en_esp_mr+k] = pow(( pos_respecto_p_central[max_p_en_esp_mr*i+j].y - pos_respecto_p_central[max_p_en_esp_mr*i+k].y ),2);
+                dis_p_esp_mr_rep[i*max_p_en_esp_mr*max_p_en_esp_mr+j*max_p_en_esp_mr+k] = pow(( pos_respecto_p_central[max_p_en_esp_mr*i+j].z - pos_respecto_p_central[max_p_en_esp_mr*i+k].z ),2);
+                dis_p_esp_mr_rep[i*max_p_en_esp_mr*max_p_en_esp_mr+j*max_p_en_esp_mr+k] =sqrt(dis_p_esp_mr_rep[i*max_p_en_esp_mr*max_p_en_esp_mr+j*max_p_en_esp_mr+k]);
             }    
         }
     }
-    
 }
 
 #endif

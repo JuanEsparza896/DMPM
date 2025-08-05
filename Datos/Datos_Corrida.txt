@@ -1,7 +1,7 @@
-10000 nc
+50000 nc
 10 ncp
 0.001 dt
-2.0 temp
+2.5 temp
 2.7 v0
 3.5 rc
 0.65 dens
@@ -9,5 +9,9 @@
 32 hilosPP
 1 ovec
 1 ocel
+0 coord
+0 ensamble
+4 termo
+0.1 paramtermo
 0 vibrante
-2 nparam
+1000.0 kres

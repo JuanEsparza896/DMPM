@@ -1,5 +1,5 @@
-#ifndef DATOSCUDA
-#define DATOSCUDA
+#ifndef T_DATOS_CUDA_HEADER
+#define T_DATOS_CUDA_HEADER
 
 /*
 No Usamos clases o estructuras por lo que no podemos recurrir a sobrecarga de operadores
@@ -24,8 +24,8 @@ __device__ __host__ T InvDataType2(T var)
     return temp;
 }
 
-template<typename T>
-__device__ __host__ T InitDataType3(auto a,auto b,auto c)
+template<typename T,typename K>
+__device__ __host__ T InitDataType3(K a,K b,K c)
 {
     T temp;
     temp.x=a;
