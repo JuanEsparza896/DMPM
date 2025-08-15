@@ -63,7 +63,10 @@ __global__ void CalculoDeVecinos(uint np,uint n_esp_p,uint *M_int,uint *esp_de_p
         dis=Discuad(dif);
         if(dis<=rc*rc&&mad_de_p[particula].x!=mad_de_p[j].x&&M_int[n_esp_p*esp1+esp2]){
             nv=atomicInc(&n_vecinos[particula],FULL_MASK);
-            if(nv<nmaxvec)vecinos[particula*nmaxvec+nv]=j;
+            if(nv<nmaxvec)vecinos[particula*nmaxvec+nv]=j;else{
+                atomicDec(&n_vecinos[particula],FULL_MASK);
+                break;
+            }
         }
     }
 }
@@ -272,7 +275,10 @@ __global__ void CalculoDeVecinosConCeldas(uint np,uint n_de_cel_vec,uint nmax_p_
             dis=Discuad(dif);
             if(dis<=rc*rc&&mad_de_p[particula].x!=mad_de_p[j].x&&M_int[n_esp_p*esp1+esp2]){
                 nv=atomicInc(&nvec[particula],FULL_MASK);
-                if(nv<nmaxvec)vecinos[particula*nmaxvec+nv]=j;
+                if(nv<nmaxvec)vecinos[particula*nmaxvec+nv]=j;else{
+                    atomicDec(&nvec[particula],FULL_MASK);
+                    break;
+                }
             }
         }
         ccll++;

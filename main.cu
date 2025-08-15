@@ -3,6 +3,7 @@
 #include "DM/SistemaInicial.cuh"
 #include "DM/SimulacionSinOptimizaciones.cuh"
 #include "DM/SimulacionVecinos.cuh"
+#include "DM/SimulacionVecinos2.cuh"
 #include "DM/SimulacionCeldas.cuh"
 #include "DM/SimulacionVecinosYCeldas.cuh"
 
@@ -169,7 +170,7 @@ int main()
                    pos,q_rat,vel,acel,dis_p_esp_mr_rep,condper,caja,cajai,ofasres,ofasat);
         break;
         case 1:
-        SimulacionV(nc,ncp,np,n_esp_p,n_esp_m,nparam,pot,max_p_en_esp_mr,ensamble,termos,max_it,esp_p,M_int,p_en_m,
+        SimulacionV2(nc,ncp,np,n_esp_p,n_esp_m,nparam,pot,max_p_en_esp_mr,ensamble,termos,max_it,esp_p,M_int,p_en_m,
                     n_m_esp_mr,n_p_esp_m,nhilos,maxhilos,vibrante,mad_de_p,condper,rc,rbuf,dens,dt,kres,temp,param_termo,tol,
                     param,pos,vel,acel,q_rat,dis_p_esp_mr_rep,caja,cajai,memoria_global,ofasres,ofasat);
         break;
