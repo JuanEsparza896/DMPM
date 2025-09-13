@@ -1,5 +1,9 @@
-# DMPM
+# DMPM (Dinámica Molecular en Paralelo para Moléculas)
 
-Este es el orden de jerárquico de los archivos:
+Contenido:
 
-main.cu es el archivo principal que depende de todos los demás
+* Introducción.
+* Requisitos de instalación.
+* Guía de uso.
+  * Simular partículas.
+  * Simular Moléculas. 
