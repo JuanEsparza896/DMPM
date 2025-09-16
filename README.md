@@ -23,8 +23,8 @@ Contenido:
     
     En esta carpeta se encuentran todos los archivos con código para las rutinas de dinámica molecular, a continuación se hablan de cada uno de estos archivos y de las rutinas que contienen.
 
-     *  FuncCompSim.cuh
-     En este archivo se encuentran las siguientes rutinas:
+    *  FuncCompSim.cuh
+    En este archivo se encuentran las siguientes rutinas:
  
      * Reduccionconwarps()
        Esta función sirve para poder acumular los valores de los elementos de un
