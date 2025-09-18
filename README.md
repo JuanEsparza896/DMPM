@@ -19,22 +19,19 @@ Contenido:
 ## Contenidos del programa.
 
 En esta sección se describen cada una de las carpetas y archivos que pertenecen a DMPM.
+Cada una de estas carpetas tiene un documento de texto que corresponden a cada archivo de código donde se explican a detalle cada una de las funciones correspondientes. 
 
 ### Carpeta DM
     
-En esta carpeta se encuentran todos los archivos con código para las rutinas de dinámica molecular, a continuación se hablan de cada uno de estos archivos y de las rutinas que contienen.
+En esta carpeta se encuentran todos los archivos con código para las rutinas de dinámica molecular, a continuación se hablan de cada uno de estos archivos y el tipo de funciones que contienen.
 
 * FuncCompSim.cuh
-      
-En este archivo se encuentran las siguientes rutinas:
- 
- 1. Reduccionconwarps():
-         
- Esta función sirve para poder acumular los valores de los elementos de un arreglo
-    
-  2. CondPeriodicas()
-     
-  4. DisCuad
+
+  Este archivo contiene funciones que se usan recurrentemente en los procesos de dinámica molecular, como el el cálculo de posición en caso de condiciones periódicas, obtención de distancia y obtención de la energía total del sistema a partir de un arreglo.
+
+* Optimizaciones.cuh
+
+  Este archivo contiene las funciones relacionadas con las optimizaciones de celdas y vecinos cercanos en dinámica molecular en GPU, como son, el cálculo máximo del número de vecinos posibles de una partículas, el máximo número de partículas en una celda y lo cálculos de los vecinos y asignación de celdas para cada partícula en GPU.
  
   ### Carpeta Datos
   
