@@ -10,6 +10,8 @@ Contenido:
 
 ## Requisitos de instalación
 
+El programa funciona en Linux.
+
  * CUDA TOOLKIT
    
   Se puede descargar en: https://developer.nvidia.com/cuda-toolkit
@@ -32,6 +34,10 @@ En esta carpeta se encuentran todos los archivos con código para las rutinas de
 * Optimizaciones.cuh
 
   Este archivo contiene las funciones relacionadas con las optimizaciones de celdas y vecinos cercanos en dinámica molecular en GPU, como son, el cálculo máximo del número de vecinos posibles de una partículas, el máximo número de partículas en una celda y lo cálculos de los vecinos y asignación de celdas para cada partícula en GPU.
+
+* Potenciales.cuh
+
+  Contiene las rutinas donde se calculan las fuerzas y contribuciones a la energía potencial asociados a diversos modelos de interacción entre partículas, además de las propiedades promedio asociadas a esos modelos.
  
   ### Carpeta Datos
   
