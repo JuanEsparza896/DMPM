@@ -2,11 +2,21 @@
 
 Contenido:
 
+* Descripción general.
 * Requisitos de instalación.
-* Contenidos del programa.
 * Creando una simulación.
   * Simular partículas.
   * Simular Moléculas.
+
+## Descripción General
+
+DMPM es un programa de simulación de dinámica molecular cuyo objetivo es introducir a la gente a el desarrollo de software científico en paralelo.
+
+El programa está desarrollado en C con ciertas utilidades de C++, al ser para GPU se utiliza CUDA para el uso de GPU.
+
+El número de opciones para simular es reducido para que el contenido a explorar no sea abrumador, el programa cuenta con funciones necesarias para poder generar simulaciones simples en ensambles NVE y NVT.
+
+Los archivos que contienen las funciones para la simulación se encuentran en 2 carpetas, DM y MISC; en la primera carpeta se encuentran las funciones que se asocian directamente a simulación de partículas y en la segunda carpeta se encuentran las funciones que corresponden a operaciones matemáticas y computacionales por ejemplo la detección de GPU y sus propiedades.
 
 ## Requisitos de instalación
 
@@ -18,32 +28,4 @@ El programa funciona en Linux.
     
   La guía de instalación: https://docs.nvidia.com/cuda/cuda-installation-guide-linux/index.html
 
-## Contenidos del programa.
 
-En esta sección se describen cada una de las carpetas y archivos que pertenecen a DMPM.
-Cada una de estas carpetas tiene un documento de texto que corresponden a cada archivo de código donde se explican a detalle cada una de las funciones correspondientes. 
-
-### Carpeta DM
-    
-En esta carpeta se encuentran todos los archivos con código para las rutinas de dinámica molecular, a continuación se hablan de cada uno de estos archivos y el tipo de funciones que contienen.
-
-* FuncCompSim.cuh
-
-  Este archivo contiene funciones que se usan recurrentemente en los procesos de dinámica molecular, como el el cálculo de posición en caso de condiciones periódicas, obtención de distancia y obtención de la energía total del sistema a partir de un arreglo.
-
-* Optimizaciones.cuh
-
-  Este archivo contiene las funciones relacionadas con las optimizaciones de celdas y vecinos cercanos en dinámica molecular en GPU, como son, el cálculo máximo del número de vecinos posibles de una partículas, el máximo número de partículas en una celda y lo cálculos de los vecinos y asignación de celdas para cada partícula en GPU.
-
-* Potenciales.cuh
-
-  Contiene las rutinas donde se calculan las fuerzas y contribuciones a la energía potencial asociados a diversos modelos de interacción entre partículas, además de las propiedades promedio asociadas a esos modelos.
- 
-  ### Carpeta Datos
-  
-  ### Carpeta MISC
-  
-  ### main.cu
-  
-
-  
