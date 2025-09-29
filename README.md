@@ -18,6 +18,8 @@ El número de opciones para simular es reducido para que el contenido a explorar
 
 Los archivos que contienen las funciones para la simulación se encuentran en 2 carpetas, DM y MISC; en la primera carpeta se encuentran las funciones que se asocian directamente a simulación de partículas y en la segunda carpeta se encuentran las funciones que corresponden a operaciones matemáticas y computacionales por ejemplo la detección de GPU y sus propiedades.
 
+main.cu toma funciones definidas en las carpetas de DM y MISC y muestra la estructura de una simulación de dinámica molecular, para poder elegir que tipo de sistema se simula es necesario darle parámetros en el sistema, los cuales se leen de la carpeta Datos.
+
 ## Requisitos de instalación
 
 El programa probado en distintas distribuciones de Ubuntu.
