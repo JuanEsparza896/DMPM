@@ -20,7 +20,11 @@ Los archivos que contienen las funciones para la simulación se encuentran en 2 
 
 ## Requisitos de instalación
 
-El programa funciona en Linux.
+El programa probado en distintas distribuciones de Ubuntu.
+
+* 20.04
+* 22.04
+* 24.04
 
  * CUDA TOOLKIT
    
@@ -28,4 +32,4 @@ El programa funciona en Linux.
     
   La guía de instalación: https://docs.nvidia.com/cuda/cuda-installation-guide-linux/index.html
 
-
+* Compilador de C++ requisito también del CUDATOOLKIT
