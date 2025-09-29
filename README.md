@@ -35,3 +35,5 @@ El programa probado en distintas distribuciones de Ubuntu.
   La guía de instalación: https://docs.nvidia.com/cuda/cuda-installation-guide-linux/index.html
 
 * Compilador de C++ requisito también del CUDATOOLKIT
+
+## Creando una simulación
