@@ -99,14 +99,14 @@ despues de eso se indica el número de partículas que hay de cada especie y par
 
 Un ejemplo para un sistema con 3 especies de partículas con 100 de la primera especie, 50 de la segunda y 15 de la tercera:
 
-      3 nem
-      3 nea
-      100 nme[0]
-      50 nme[1]
-      15 nme[2]
-      1 naem[0]
-      1 naem[1]
-      1 naem[2]
+         3 nem
+         3 nea
+         100 nme[0]
+         50 nme[1]
+         15 nme[2]
+         1 naem[0]
+         1 naem[1]
+         1 naem[2]
          
 No es necesario que del lado derecho de los números se ponga este texto específicamente, se puede hacer el archivo de la siguiente manera:
 
