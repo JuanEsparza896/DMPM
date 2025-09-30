@@ -88,8 +88,38 @@ En caso de trabajar con moléculas es necesario tener algoritmos de constricció
 
 Se tienen 4 tipos de simulación los cuales dependen del tipo de optimizaciones que se quieran ocupar, estas son vecinos cercanos y celdas, la razón por la cuál no se conserva solo aquella con todas las optimizaciones es por motivos de enseñanza; para mostrar como cambian los algoritmos de simulación cada vez que se añade una optimización.
 
-
 ## Simular partículas
+
+No es necesario cambiar el archivo main.cu para realizar simulaciones, todos los cambios se realizan en la carpeta de datos, nótese que realizar dos simulaciones con los mismos parámetros no genera un archivos distinto.
+
+### Archivo Datos_Sistema
+
+El valor de nem y nea tiene que ser el mismo ya que el número de especies de moléculas y de partículas es el mismo
+despues de eso se indica el número de partículas que hay de cada especie y para cada especie de molécula i naem\[i\] vale 1
+
+Un ejemplo para un sistema con 3 especies de partículas con 100 de la primera especie, 50 de la segunda y 15 de la tercera:
+
+      3 nem
+      3 nea
+      100 nme[0]
+      50 nme[1]
+      15 nme[2]
+      1 naem[0]
+      1 naem[1]
+      1 naem[2]
+         
+No es necesario que del lado derecho de los números se ponga este texto específicamente, se puede hacer el archivo de la siguiente manera:
+
+      3 a
+      3 b
+      100 nme
+      50 nme
+      15 nme
+      1 naem
+      1 naed
+      1 naeas
+
+Lo que si es necesario es que sean una sola cadena de texto. 
 
 ## Simular moléculas
 
