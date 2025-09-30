@@ -200,5 +200,35 @@ Inmediatamente el programa se empieza a ejecutar, los resultados estarán en la 
 
 Pasa lo mismo que el [archivo de partículas](#archivo-datos_corridatxt) la diferencia es que vibrante y kres si son variables relevantes, cuando vibrante es 0 o False el algoritmo para mantener la estructura de las moléculas es RATTLE, cuando es 1 o True se utilizan resortes cuya constante elástica es kres.
 
+### Archivo Datos_Sistema.txt moléculas
+
+La idea es similar a la del [archivo de partículas](#archivo-datos_sistematxt), ahora los elementos de naem pueden ser distintos de 1, además nem y nea pueden tener valores distintos.
+
+### Archivo Datos_RATTLE.txt moléculas
+
+El algoritmo de RATTLE sirve para preservar la estructura de las moléculas, requiere 2 parámetros,  el primero es la tolerancia, es decir, que tan lejos se puede estar del valor exacto de las distancia original de las partículas sin que se tengan que volver a resolver las ecuaciones del algoritmo y maxit, el cual es el máximo número de iteraciones del algoritmo se pueden hacer antes de que se proceda al siguiente paso de la simulación.
+
+### Archivo Datos_Interaccion.txt moléculas
+
+Pasa lo mismo que para el [caso de partículas](#archivo-datos_interacciontxt).
+
+### Archivo Datos_Moleculas.txt moléculas
+
+Se muestra un ejemplo de archivo para un sistema con 3 especies moleculares, donde la especie 0 tiene 2 partículas, de especies 0 de partículas, ambas, la especie 1 contiene 3 partículas con especies de partículas 0,2,1 y la especie 2 contiene 1 partícula de especie 2 de partícula.
+
+      0 0 0.0 0.0 0.0
+      0 0 0.0 0.0 1.0
+      1 0 0.0 0.0 0.0
+      1 2 0.0 0.0 0.5
+      1 1 0.0 0.0 -0.5
+      2 2 0.0 0.0 0.0
+
+Como se observa la primera columna indica la especie de las moléculas, la segunda la especie de la partícula, la tercera, cuarta y quinta las coordenadas de dicha partícula respecto a una partícula central.
+
+**Las entradas de este archivo deben venir en orden por el número de la especie de las moléculas**
+
+### Corriendo el programa
+
+Es el mismo proceso que para [partículas](#realizando-la-simulación). 
 
 
