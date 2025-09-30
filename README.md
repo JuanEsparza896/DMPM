@@ -4,9 +4,9 @@ Contenido:
 
 * [Descripción general.](#descripción-general)
 * [Requisitos de instalación.](#requisitos-de-instalación)
-* ¿Cómo funciona el programa?.
-* Simular partículas.
-* Simular Moléculas.
+* [¿Cómo funciona el programa?.](¿cómo-funciona-el-programa?)
+* [Simular partículas.](#simular-partículas)
+* [Simular Moléculas.](#simular-moléculas)
 
 ## Descripción General
 
@@ -90,6 +90,8 @@ Se tienen 4 tipos de simulación los cuales dependen del tipo de optimizaciones 
 
 
 ## Simular partículas
+
+## Simular moléculas
 
 
 
