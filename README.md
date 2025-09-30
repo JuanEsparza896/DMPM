@@ -198,7 +198,7 @@ Inmediatamente el programa se empieza a ejecutar, los resultados estarán en la 
 
 ### Archivo Datos_Corrida.txt moléculas
 
-Pasa lo mismo que el [archivo de partículas](#archivo-datos_corrida.txt) la diferencia es que vibrante y kres si son variables relevantes, cuando vibrante es 0 o False el algoritmo para mantener la estructura de las moléculas es RATTLE, cuando es 1 o True se utilizan resortes cuya constante elástica es kres.
+Pasa lo mismo que el [archivo de partículas](##archivo-datos_corrida.txt) la diferencia es que vibrante y kres si son variables relevantes, cuando vibrante es 0 o False el algoritmo para mantener la estructura de las moléculas es RATTLE, cuando es 1 o True se utilizan resortes cuya constante elástica es kres.
 
 
 
