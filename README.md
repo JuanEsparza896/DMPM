@@ -92,21 +92,48 @@ Se tienen 4 tipos de simulación los cuales dependen del tipo de optimizaciones 
 
 No es necesario cambiar el archivo main.cu para realizar simulaciones, todos los cambios se realizan en la carpeta de datos, nótese que realizar dos simulaciones con los mismos parámetros no genera un archivos distinto.
 
-### Archivo Datos_Sistema
+### Archivo Datos_Corrida.txt
+
+Se muestra un ejemplo de lo que podría contener este archivo y a continuación se explica que significa.
+
+      10000 nc
+      10 ncp
+      0.001 dt
+      2.5 temp
+      3.5 rc
+      0.65 dens
+      1 potencial
+      32 hilosPP
+      1 ovec
+      1 ocel
+      0 coord
+      1 ensamble
+      3 termo
+      0.9 paramtermo
+      0 vibrante
+      1000.0 kres
+
+Estos parámetros corresponden a un archivo que explora 10,000 configuraciones (nc), imprime propiedades termodinámicas cada 10\% de la corrida (ncp) con un paso de integración de 0.001, la temperatura inicial del sistema es 2.5 y en caso de que ensamble sea 1 esa será la temperatura deseada (temp) , el radio de corte en caso de usar vecinos cercanos y/o celdas es de 3.5 (rc), la densidad del sistema es de 0.65 (dens), el potencial de interacción es Lennard-Jones (potencial), se utilizan 32 hilos de la GPU para calcular fuerzas y contribuciones a la energía interna de una partícula con el resto, el algoritmo usa optimización de vecinos (ovec) y de celdas (ocel), las coordenadas están en un sistema cartesiano (coord) el ensamble es NVT (ensamble), el termostato es el de Bussi-Donadio-Parinello (termo), su parámetro correspondiente es de 0.9 (paramtermo), vibrante solo se ocupa si se simulan moléculas y kres también por lo que sus valores no son importantes en este contexto.
+
+Para saber a que potencial de interacción corresponde cada número se puede revisar el archivo Definiciones.cuh en la carpeta MISC, para coord = 1 se leen las coordenadas como si el sistema de referencia estuviera en coordenadas esféricas, cuando ensamble es 0 el sistema es NVE, termo puede tomar valores de 0 a 4 y sus termostatos correspondientes son reescalamiento de velocidades, andersen, berendsen, Bussi-Donadio-Parinello y Nosé-Hoover, vibrante se mencionará más adelante.
+
+[Volver a simular moléculas](#simular-moléculas)
+
+### Archivo Datos_Sistema.txt
 
 El valor de nem y nea tiene que ser el mismo ya que el número de especies de moléculas y de partículas es el mismo
 despues de eso se indica el número de partículas que hay de cada especie y para cada especie de molécula i naem\[i\] vale 1
 
 Un ejemplo para un sistema con 3 especies de partículas con 100 de la primera especie, 50 de la segunda y 15 de la tercera:
 
-         3 nem
-         3 nea
-         100 nme[0]
-         50 nme[1]
-         15 nme[2]
-         1 naem[0]
-         1 naem[1]
-         1 naem[2]
+      3 nem
+      3 nea
+      100 nme[0]
+      50 nme[1]
+      15 nme[2]
+      1 naem[0]
+      1 naem[1]
+      1 naem[2]
          
 No es necesario que del lado derecho de los números se ponga este texto específicamente, se puede hacer el archivo de la siguiente manera:
 
@@ -119,9 +146,59 @@ No es necesario que del lado derecho de los números se ponga este texto especí
       1 naed
       1 naeas
 
-Lo que si es necesario es que sean una sola cadena de texto. 
+Lo que si es necesario es que sean una sola cadena de texto, además en la primera opción es más claro el propósito de cada una de las lineas por lo que se recomienda adoptar esta notación.
+
+[Volver a simular moléculas](#simular-moléculas)
+
+### Archivo Datos_RATTLE.txt
+
+No es relevante para la simulación de partículas.
+
+### Archivo Datos_Interaccion.txt
+
+En este archivo se coloca una matríz simétrica de n x n donde n es el número de especies de partículas, el valor de una entrada de la matríz es 0 si las especies no interactuan y 1 si lo hacen, un ejemplo para 3 especies de partículas donde misma especie interacciona, 0 con 1 si, 0 con 2 no, 1 con 2 no es:
+
+      1 1 0
+      1 1 0
+      0 0 1
+
+[Volver a simular moléculas](#simular-moléculas)
+
+### Archivo Datos_Atomos.txt
+
+Cada renglón del archivo corresponde a una especie de partícula, la primera columna corresponde a su diámetro y las demás a los parámetros del potencial de interacción.
+
+[Volver a simular moléculas](#simular-moléculas)
+
+### Archivo Datos_Moléculas
+
+No es relevante para la simulación de partículas
+
+### Realizando la simulación
+
+El programa se compila desde terminal, una vez que se localiza el archivo main.cu se compila de la siguiente manera:
+
+      nvcc main.cu
+
+Lo anterior genera un ejecutable con nombre a.out, en caso de cambiar el nombre del ejecutable esto es lo que se escribe en terminal
+
+      nvcc main.cu -o ejecutable
+
+para que se ejecute el programa en terminal se escribe 
+
+      ./ejecutable
+
+Inmediatamente el programa se empieza a ejecutar, los resultados estarán en la carpeta DMPM dentro de una carpeta llamada resultados.
+
+**Recordar que el archivo dir tiene que tener la ruta del archivo main.cu**
+
+[Volver a simular moléculas](#simular-moléculas)
 
 ## Simular moléculas
+
+### Archivo Datos_Corrida.txt moléculas
+
+Pasa lo mismo que el [archivo de partículas](#archivo-datos_corrida.txt) la diferencia es que vibrante y kres si son variables relevantes, cuando vibrante es 0 o False el algoritmo para mantener la estructura de las moléculas es RATTLE, cuando es 1 o True se utilizan resortes cuya constante elástica es kres.
 
 
 
