@@ -2,8 +2,8 @@
 
 Contenido:
 
-* Descripción general.
-* Requisitos de instalación.
+* [Descripción general.](#descripción-general)
+* [Requisitos de instalación.](#requisitos-de-instalación)
 * ¿Cómo funciona el programa?.
 * Simular partículas.
 * Simular Moléculas.
