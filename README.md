@@ -4,9 +4,9 @@ Contenido:
 
 * Descripción general.
 * Requisitos de instalación.
-* Creando una simulación.
-  * Simular partículas.
-  * Simular Moléculas.
+* ¿Cómo funciona el programa?.
+* Simular partículas.
+* Simular Moléculas.
 
 ## Descripción General
 
@@ -36,4 +36,60 @@ El programa probado en distintas distribuciones de Ubuntu.
 
 * Compilador de C++ requisito también del CUDATOOLKIT
 
-## Creando una simulación
+## ¿Cómo funciona el programa?
+
+Cuando se descarga el repositorio, el archivo main.cu ya tiene la estructura de una simulación de dinámica molecular, a continuación se explora que significa cada linea de código de este archivo:
+
+### \# include
+
+Es una directiva de C/C++ basicamente pide que se incluyan los contenidos de los archivos/librerías que se escriben inmediatamente después de la directiva, a continuación se mencionan las librerías y su razón para ser incluidas.
+
+1. iostream.
+   
+   En el código se utilizan las APIs de cout la cual es una alternativa a printf() más amigable ya que no requiere saber el formato de las variables que se imprimen en terminal. 
+   
+2. string
+ 
+   Permite el acceso a las variables de la clase string, las cuales son una opción alterna al uso de char
+    
+3. DM/...
+
+    Todos los archivos que pertenecen a la carpeta DM son funciones que realizan distintos procesos de la simulación
+
+### main()
+
+Dentro de la función main() se tienen primero todas las variables que se necesitan para la simulación, dentro del archivo se puede explorar que hace cada una de estas variables.
+
+### std::string dir
+
+Esta variable contiene la ruta del archivo main.cu
+
+### Inicialización del sistema
+
+Para poder inicializar las variables en main() se leen distintos archivos que se encuentran en la carpeta Datos, todas las funciones previas a la función AbrirArchivos se encargan de asignar valores a las variables y arreglos del sistema.
+
+### AbrirArchivos() e Impresión de Datos
+
+Además de escribir los resultados en terminal el programa crea una carpeta de resultados donde se encuentran archivos tipo txt con la información de la simulación. La escritura a los archivos se realiza en las funciones de impresión
+
+### Configuración inicial
+
+Para este programa la única configuración inicial aceptada es una de cristal cúbica.
+
+### Inicializar velocidades
+
+Las velocidades se inicializan a partir del principio de equipartición de la energía y una temperatura deseada.
+
+### Distancias en reposo
+
+En caso de trabajar con moléculas es necesario tener algoritmos de constricción que nos permitan preservar la estructura, la forma más simple es manteniendo las distancias iniciales entre partículas, las cuales son guardadas en otro arreglo.
+
+### Simulación
+
+Se tienen 4 tipos de simulación los cuales dependen del tipo de optimizaciones que se quieran ocupar, estas son vecinos cercanos y celdas, la razón por la cuál no se conserva solo aquella con todas las optimizaciones es por motivos de enseñanza; para mostrar como cambian los algoritmos de simulación cada vez que se añade una optimización.
+
+
+## Simular partículas
+
+
+
