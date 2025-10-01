@@ -96,24 +96,23 @@ No es necesario cambiar el archivo main.cu para realizar simulaciones, todos los
 
 Se muestra un ejemplo de lo que podría contener este archivo y a continuación se explica que significa.
 
-      10000 nc
-      10 ncp
-      0.001 dt
-      2.5 temp
-      3.5 rc
-      0.65 dens
-      1 potencial
-      32 hilosPP
-      1 ovec
-      1 ocel
-      0 coord
-      1 ensamble
-      3 termo
-      0.9 paramtermo
-      0 vibrante
-      1000.0 kres
+      nc          1000
+      ncp         10
+      dt          0.001
+      temp        2.5
+      dens        0.65
+      potencial   1
+      ensamble    1
+      termo       1
+      p_termo     0.1
+      vibrante    0
+      rc          3.5
+      ovec        1
+      ocel        1
+      hilosPP     32 
+      coord       0
 
-Estos parámetros corresponden a un archivo que explora 10,000 configuraciones (nc), imprime propiedades termodinámicas cada 10\% de la corrida (ncp) con un paso de integración de 0.001, la temperatura inicial del sistema es 2.5 y en caso de que ensamble sea 1 esa será la temperatura deseada (temp) , el radio de corte en caso de usar vecinos cercanos y/o celdas es de 3.5 (rc), la densidad del sistema es de 0.65 (dens), el potencial de interacción es Lennard-Jones (potencial), se utilizan 32 hilos de la GPU para calcular fuerzas y contribuciones a la energía interna de una partícula con el resto, el algoritmo usa optimización de vecinos (ovec) y de celdas (ocel), las coordenadas están en un sistema cartesiano (coord) el ensamble es NVT (ensamble), el termostato es el de Bussi-Donadio-Parinello (termo), su parámetro correspondiente es de 0.9 (paramtermo), vibrante solo se ocupa si se simulan moléculas y kres también por lo que sus valores no son importantes en este contexto.
+Estos parámetros corresponden a un archivo que explora 1,000 configuraciones (nc), imprime propiedades termodinámicas cada 10\% de la corrida (ncp) con un paso de integración (dt) de 0.001, la temperatura (temp) inicial del sistema es 2.5, la densidad (dens) es 0.65, el potencial de interacción es Lennard-Jones (potencial),el ensamble es NVT (ensamble), el termostato es el de Andersen (termo), su parámetro correspondiente es de 0.9 (paramtermo) , el radio de corte en caso de usar vecinos cercanos y/o celdas es de 3.5 (rc), el algoritmo usa optimización de vecinos (ovec) y de celdas (ocel), se utilizan 32 hilos de la GPU para calcular fuerzas y contribuciones a la energía interna de una partícula con el resto y las coordenadas están en un sistema cartesiano (coord) , vibrante solo se ocupa si se simulan moléculas por lo que su valor no es importante en este contexto.
 
 Para saber a que potencial de interacción corresponde cada número se puede revisar el archivo Definiciones.cuh en la carpeta MISC, para coord = 1 se leen las coordenadas como si el sistema de referencia estuviera en coordenadas esféricas, cuando ensamble es 0 el sistema es NVE, termo puede tomar valores de 0 a 4 y sus termostatos correspondientes son reescalamiento de velocidades, andersen, berendsen, Bussi-Donadio-Parinello y Nosé-Hoover, vibrante se mencionará más adelante.
 
@@ -121,36 +120,21 @@ Para saber a que potencial de interacción corresponde cada número se puede rev
 
 ### Archivo Datos_Sistema.txt
 
-El valor de nem y nea tiene que ser el mismo ya que el número de especies de moléculas y de partículas es el mismo
-despues de eso se indica el número de partículas que hay de cada especie y para cada especie de molécula i naem\[i\] vale 1
+El valor de n_esp_m y n_esp_p tienen que ser el mismo ya que el número de especies de moléculas y de partículas es el mismo,
+despues de eso se indica el número de moléculas que hay de cada especie molecular (n_m_esp_mr) pero como las especies moleculares son las mismas que las de partículas no hay problema, en la siguiente linea se pone cuantas partículas tiene cada especie molecular (n_p_esp_m) como son moléculas de una partícula se escribe 1 para todas
 
 Un ejemplo para un sistema con 3 especies de partículas con 100 de la primera especie, 50 de la segunda y 15 de la tercera:
-
-      3 nem
-      3 nea
-      100 nme[0]
-      50 nme[1]
-      15 nme[2]
-      1 naem[0]
-      1 naem[1]
-      1 naem[2]
+      
+      n_esp_m     1
+      n_esp_p     3
+      n_m_esp_mr  100 50 15
+      n_p_esp_m   1 1 1
          
-No es necesario que del lado derecho de los números se ponga este texto específicamente, se puede hacer el archivo de la siguiente manera:
-
-      3 a
-      3 b
-      100 nme
-      50 nme
-      15 nme
-      1 naem
-      1 naed
-      1 naeas
-
-Lo que si es necesario es que sean una sola cadena de texto, además en la primera opción es más claro el propósito de cada una de las lineas por lo que se recomienda adoptar esta notación.
+Es necesario que del lado izquierdo de los números se ponga este texto específicamente, ya que para la lectura de datos se busca que un string coincida con lo que está escrito para asignarle a la variable con ese nombre ese valor.
 
 [Volver a simular moléculas](#simular-moléculas)
 
-### Archivo Datos_RATTLE.txt
+### Archivo Datos_Constricciones.txt
 
 No es relevante para la simulación de partículas.
 
@@ -164,7 +148,7 @@ En este archivo se coloca una matríz simétrica de n x n donde n es el número 
 
 [Volver a simular moléculas](#simular-moléculas)
 
-### Archivo Datos_Atomos.txt
+### Archivo Datos_Particulas.txt
 
 Cada renglón del archivo corresponde a una especie de partícula, la primera columna corresponde a su diámetro y las demás a los parámetros del potencial de interacción.
 
@@ -198,15 +182,24 @@ Inmediatamente el programa se empieza a ejecutar, los resultados estarán en la 
 
 ### Archivo Datos_Corrida.txt moléculas
 
-Pasa lo mismo que el [archivo de partículas](#archivo-datos_corridatxt) la diferencia es que vibrante y kres si son variables relevantes, cuando vibrante es 0 o False el algoritmo para mantener la estructura de las moléculas es RATTLE, cuando es 1 o True se utilizan resortes cuya constante elástica es kres.
+Pasa lo mismo que el [archivo de partículas](#archivo-datos_corridatxt) la diferencia es que vibrante es una variable relevante, cuando vibrante es 0 o False el algoritmo para mantener la estructura de las moléculas es RATTLE
 
 ### Archivo Datos_Sistema.txt moléculas
 
 La idea es similar a la del [archivo de partículas](#archivo-datos_sistematxt), ahora los elementos de naem pueden ser distintos de 1, además nem y nea pueden tener valores distintos.
 
-### Archivo Datos_RATTLE.txt moléculas
+### Archivo Datos_Constricciones.txt moléculas
 
-El algoritmo de RATTLE sirve para preservar la estructura de las moléculas, requiere 2 parámetros,  el primero es la tolerancia, es decir, que tan lejos se puede estar del valor exacto de las distancia original de las partículas sin que se tengan que volver a resolver las ecuaciones del algoritmo y maxit, el cual es el máximo número de iteraciones del algoritmo se pueden hacer antes de que se proceda al siguiente paso de la simulación.
+En el archivo se encuentra lo siguiente:
+         
+      RATTLE
+      tol     0.0001
+      maxit   10000.0
+      VIBRANTE
+      kres    10000.0
+
+Si vibrante es true entonces se leerá kres la cuál es la constante elástica que conecta a las partículas de una molécula para preservar su estructura.
+Si vibrante es false entonces se usa el algoritmo de RATTLE, el cual tiene 2 parámetros, la tolerancia y el número máximo de iteraciones.
 
 ### Archivo Datos_Interaccion.txt moléculas
 
