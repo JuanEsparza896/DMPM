@@ -18,21 +18,14 @@ using str=std::string;
 void LeerDatosSistema1(str dir,uint &n_esp_m,uint &n_esp_p)
 {
     str f=dir+"/Datos/Datos_Sistema.txt";
+    str key;
+    double value;
     std::ifstream iff(f);
     PAbrioArchivo(f,iff);
-    str line;
-    while (std::getline(iff,line)){
-        std::istringstream iss(line);
-        str temp;
-        if(line.find("n_esp_m") != str::npos){
-            uint val;
-            iss >> temp >> val;
-            n_esp_m = val;
-        }else if(line.find("n_esp_p") != str::npos){
-            uint val;
-            iss >> temp >> val;
-            n_esp_p = val;
-        }
+
+    while (iff >> key >> value) {
+        if (key == "n_esp_m") n_esp_m = (uint)value;
+        else if (key == "n_esp_p") n_esp_p = (uint)value;
     }
 
     iff.close();
@@ -41,7 +34,6 @@ void LeerDatosSistema2(str dir,uint n_esp_m,uint *n_m_esp_mr,uint *n_p_esp_m,uin
 {
     str f=dir+"/Datos/Datos_Sistema.txt";
     str temp;
-    uint imp;
     np=nm=0;
     std::ifstream iff(f);
     PAbrioArchivo(f,iff);
@@ -81,73 +73,28 @@ void LeerDatosSistema2(str dir,uint n_esp_m,uint *n_m_esp_mr,uint *n_p_esp_m,uin
 void LeerDatosCorrida(str dir,uint &nc,uint &ncp,uint &coord,uint &ensamble,uint &termos,uint &pot,int &cvec,int &ccel,int &nhilos,double &dt,double &temp,double &rc,double &dens,double &param_termo,bool &vibrante)
 {
     str f=dir+"/Datos/Datos_Corrida.txt";
-    str tp;
+    str key;
+    double value;
+    uint tempo;
     std::ifstream iff(f);
     PAbrioArchivo(f,iff);
-    str line;
-    while (std::getline(iff,line)){
-        std::istringstream iss(line);
-        if(line.find("nc") != str::npos){
-            uint val;
-            iss >> tp >> val;
-            nc = val;
-        }else if(line.find("ncp") != str::npos){
-            uint val;
-            iss >> tp >> val;
-            ncp = val;
-        }else if(line.find("dt") != str::npos){
-            double val;
-            iss >> tp >> val;
-            dt = val;
-        }else if(line.find("temp") != str::npos){
-            double val;
-            iss >> tp >> val;
-            temp = val;
-        }if(line.find("dens") != str::npos){
-            double val;
-            iss >> tp >> val;
-            dens = val;
-        }if(line.find("potencial") != str::npos){
-            uint val;
-            iss >> tp >> val;
-            pot = val;
-        }if(line.find("ensamble") != str::npos){
-            uint val;
-            iss >> tp >> val;
-            ensamble = val;
-        }if(line.find("termo") != str::npos){
-            uint val;
-            iss >> tp >> val;
-            termos = val;
-        }if(line.find("p_termo") != str::npos){
-            double val;
-            iss >> tp >> val;
-            param_termo = val;
-        }if(line.find("vibrante") != str::npos){
-            uint val;
-            iss >> tp >> val;
-            if(val)vibrante=true;else vibrante=false;
-        }if(line.find("rc") != str::npos){
-            double val;
-            iss >> tp >> val;
-            rc = val;
-        }if(line.find("ovec") != str::npos){
-            int val;
-            iss >> tp >> val;
-            cvec = val;
-        }if(line.find("ocel") != str::npos){
-            int val;
-            iss >> tp >> val;
-            ccel = val;
-        }if(line.find("hilosPP") != str::npos){
-            int val;
-            iss >> tp >> val;
-            nhilos = val;
-        }if(line.find("coord") != str::npos){
-            uint val;
-            iss >> tp >> val;
-            coord = val;
-        }
+
+    while (iff >> key >> value) {
+        if (key == "nc") nc = (uint)value;
+        else if (key == "ncp") ncp = (uint)value;
+        else if (key == "dt") dt = value;
+        else if (key == "temp") temp = value;
+        else if (key == "dens") dens = value;
+        else if (key == "potencial") pot = (uint)value;
+        else if (key == "ensamble") ensamble = (uint)value;
+        else if (key == "termo") termos = (uint)value;
+        else if (key == "p_termo") param_termo = value;
+        else if (key == "vibrante"){tempo=uint(value);if(tempo)vibrante=true;else vibrante=false;} 
+        else if (key == "rc") rc = value;
+        else if (key == "ovec") cvec = (int)value;
+        else if (key == "ocel") ccel = (int)value;
+        else if (key == "hilosPP") nhilos = (int)value;
+        else if (key == "coord") coord = (uint)value;
     }
 
     iff.close();
@@ -647,8 +594,9 @@ void ConfiguracionCubica(uint n_esp_m,uint *m_de_esp_mr,uint *p_en_esp_mr,uint *
     }
 }
 
-void InicializarVelocidades(double v0,double *v,int np)
+void InicializarVelocidades(double temp,double *v,int np)
 {
+    double v0=sqrt(nd*temp);
     double r;
     uint num=time(NULL);
     srand(num);
@@ -671,9 +619,9 @@ void DistanciasEntreParticulasEnMoleculaIniciales(uint np,uint n_esp_m,uint max_
         for(int j=0;j<n_p_esp_mr[i];j++){
             for(int k=0;k<n_p_esp_mr[i];k++){
                 dis_p_esp_mr_rep[i*max_p_en_esp_mr*max_p_en_esp_mr+j*max_p_en_esp_mr+k] = 0.;
-                dis_p_esp_mr_rep[i*max_p_en_esp_mr*max_p_en_esp_mr+j*max_p_en_esp_mr+k] = pow(( pos_respecto_p_central[max_p_en_esp_mr*i+j].x - pos_respecto_p_central[max_p_en_esp_mr*i+k].x ),2);
-                dis_p_esp_mr_rep[i*max_p_en_esp_mr*max_p_en_esp_mr+j*max_p_en_esp_mr+k] = pow(( pos_respecto_p_central[max_p_en_esp_mr*i+j].y - pos_respecto_p_central[max_p_en_esp_mr*i+k].y ),2);
-                dis_p_esp_mr_rep[i*max_p_en_esp_mr*max_p_en_esp_mr+j*max_p_en_esp_mr+k] = pow(( pos_respecto_p_central[max_p_en_esp_mr*i+j].z - pos_respecto_p_central[max_p_en_esp_mr*i+k].z ),2);
+                dis_p_esp_mr_rep[i*max_p_en_esp_mr*max_p_en_esp_mr+j*max_p_en_esp_mr+k] += pow(( pos_respecto_p_central[max_p_en_esp_mr*i+j].x - pos_respecto_p_central[max_p_en_esp_mr*i+k].x ),2);
+                dis_p_esp_mr_rep[i*max_p_en_esp_mr*max_p_en_esp_mr+j*max_p_en_esp_mr+k] += pow(( pos_respecto_p_central[max_p_en_esp_mr*i+j].y - pos_respecto_p_central[max_p_en_esp_mr*i+k].y ),2);
+                dis_p_esp_mr_rep[i*max_p_en_esp_mr*max_p_en_esp_mr+j*max_p_en_esp_mr+k] += pow(( pos_respecto_p_central[max_p_en_esp_mr*i+j].z - pos_respecto_p_central[max_p_en_esp_mr*i+k].z ),2);
                 dis_p_esp_mr_rep[i*max_p_en_esp_mr*max_p_en_esp_mr+j*max_p_en_esp_mr+k] =sqrt(dis_p_esp_mr_rep[i*max_p_en_esp_mr*max_p_en_esp_mr+j*max_p_en_esp_mr+k]);
             }    
         }

@@ -4,7 +4,7 @@
 #include "../MISC/Definiciones.cuh"
 #include "FuncCompSim.cuh"
 
-void RestriccionLongitudEnlace1(uint part,uint j,int3 condper,double kres,double *pos,double *acel,double dist_rep,double3 caja,double3 cajai)
+double RestriccionLongitudEnlace1(uint part,uint j,int3 condper,float kres,double *pos,double *acel,double dist_rep,double3 caja,double3 cajai)
 {
     double3 dx;
     double dis,pot=0.,fac;
@@ -27,14 +27,16 @@ void RestriccionLongitudEnlace1(uint part,uint j,int3 condper,double kres,double
     acel[j*nd]+=fac*dx.x;
     acel[j*nd + 1]+=fac*dx.y;
     acel[j*nd + 2]+=fac*dx.z;
+    return pot;
 }
 
-void PotencialesDeRestriccion(uint n_esp_m,uint max_p_en_esp_mr,uint *n_m_esp_mr,uint *n_p_esp_m,uint *p_en_m,int3 condper,uint3 *mad_de_p,double kres,double *pos,double *acel,double *dis_p_esp_mr_rep,double3 caja,double3 cajai)
+double PotencialesDeRestriccion(uint n_esp_m,uint max_p_en_esp_mr,uint *n_m_esp_mr,uint *n_p_esp_m,uint *p_en_m,int3 condper,uint3 *mad_de_p,float kres,double *pos,double *acel,double *dis_p_esp_mr_rep,double3 caja,double3 cajai)
 {
     /*
     En esta rutina se asume que todas las partículas en una molécula están conectadas mediante resortes
     !Revisar casos límite para el futuro de esta rutina.
     */
+   double pot=0.;
 
     uint mol=0,part=0;
     for(uint e_mol=0;e_mol<n_esp_m;e_mol++){
@@ -44,12 +46,12 @@ void PotencialesDeRestriccion(uint n_esp_m,uint max_p_en_esp_mr,uint *n_m_esp_mr
                 part=p_en_m[mol]+i;
                 for(uint j=part+1;j<part+mad_de_p[i].z;j++){
                     if(part!=j)
-                    RestriccionLongitudEnlace1(part,j,condper,kres,pos,acel,dis_p_esp_mr_rep[e_mol*max_p_en_esp_mr*max_p_en_esp_mr+i*max_p_en_esp_mr+j-p_en_m[i]],caja,cajai);
+                    pot+=RestriccionLongitudEnlace1(part,j,condper,kres,pos,acel,dis_p_esp_mr_rep[e_mol*max_p_en_esp_mr*max_p_en_esp_mr+i*max_p_en_esp_mr+j-p_en_m[i]],caja,cajai);
                 }
             }
             mol++;
         }
     }
-
+    return pot;
 }
 #endif

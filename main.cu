@@ -153,8 +153,8 @@ int main()
     double *dis_p_esp_mr_rep = new double[n_esp_m*max_p_en_esp_mr*max_p_en_esp_mr];
     if(max_p_en_esp_mr>1)p_o_m=true;
     
-    InicializarVelocidades(v0,vel,np);
-    if(!p_o_m)DistanciasEntreParticulasEnMoleculaIniciales(np,n_esp_m,max_p_en_esp_mr,n_p_esp_m,dis_p_esp_mr_rep,pos_respecto_p_central);
+    InicializarVelocidades(temp,vel,np);
+    if(p_o_m)DistanciasEntreParticulasEnMoleculaIniciales(np,n_esp_m,max_p_en_esp_mr,n_p_esp_m,dis_p_esp_mr_rep,pos_respecto_p_central);
     /*******************************************************************************************************************/
     //Lo usamos para optimizaciones
     double rbuf=0.5;
@@ -163,23 +163,23 @@ int main()
     switch(opt)
     {
         case 0:
-        Simulacion(nc,ncp,nhilos,np,nparam,pot,n_esp_p,n_esp_m,max_p_en_esp_mr,ensamble,termos,max_it,mad_de_p,esp_p,
-                   n_m_esp_mr,n_p_esp_m,M_int,p_en_m,maxhilos,vibrante,memoria_global,dt,dens,kres,temp,param_termo,tol,param,
+        Simulacion(nc,ncp,nhilos,np,nparam,pot,n_esp_p,n_esp_m,max_p_en_esp_mr,ensamble,termos,mad_de_p,esp_p,
+                   n_m_esp_mr,n_p_esp_m,M_int,p_en_m,maxhilos,vibrante,p_o_m,memoria_global,constr,dt,dens,temp,param_termo,param,
                    pos,q_rat,vel,acel,dis_p_esp_mr_rep,condper,caja,cajai,ofasres,ofasat);
         break;
         case 1:
-        SimulacionV2(nc,ncp,np,n_esp_p,n_esp_m,nparam,pot,max_p_en_esp_mr,ensamble,termos,max_it,esp_p,M_int,p_en_m,
-                    n_m_esp_mr,n_p_esp_m,nhilos,maxhilos,vibrante,mad_de_p,condper,rc,rbuf,dens,dt,kres,temp,param_termo,tol,
+        SimulacionV(nc,ncp,np,n_esp_p,n_esp_m,nparam,pot,max_p_en_esp_mr,ensamble,termos,esp_p,M_int,p_en_m,
+                    n_m_esp_mr,n_p_esp_m,nhilos,maxhilos,constr,vibrante,p_o_m,mad_de_p,condper,rc,rbuf,dens,dt,temp,param_termo,
                     param,pos,vel,acel,q_rat,dis_p_esp_mr_rep,caja,cajai,memoria_global,ofasres,ofasat);
         break;
         case 2:
-        SimulacionC(nc,ncp,np,n_esp_p,n_esp_m,nparam,pot,max_p_en_esp_mr,ensamble,termos,max_it,esp_p,M_int,p_en_m,
-                    n_m_esp_mr,n_p_esp_m,nhilos,maxhilos,vibrante,rc,dt,dens,kres,temp,param_termo,tol,param,pos,vel,acel,
+        SimulacionC(nc,ncp,np,n_esp_p,n_esp_m,nparam,pot,max_p_en_esp_mr,ensamble,termos,esp_p,M_int,p_en_m,
+                    n_m_esp_mr,n_p_esp_m,nhilos,maxhilos,constr,vibrante,p_o_m,rc,dt,dens,temp,param_termo,param,pos,vel,acel,
                     q_rat,mad_de_p,condper,caja,cajai,dis_p_esp_mr_rep,memoria_global,ofasat,ofasres);
         break;
         case 3:
-        SimulacionVYC(nc,ncp,np,n_esp_p,n_esp_m,nparam,pot,max_p_en_esp_mr,ensamble,termos,max_it,esp_p,M_int,p_en_m,
-                      n_m_esp_mr,n_p_esp_m,nhilos,maxhilos,vibrante,rc,rbuf,dens,dt,kres,temp,param_termo,tol,param,pos,vel,acel,
+        SimulacionVYC(nc,ncp,np,n_esp_p,n_esp_m,nparam,pot,max_p_en_esp_mr,ensamble,termos,esp_p,M_int,p_en_m,
+                      n_m_esp_mr,n_p_esp_m,nhilos,maxhilos,constr,vibrante,p_o_m,rc,rbuf,dens,dt,temp,param_termo,param,pos,vel,acel,
                       q_rat,dis_p_esp_mr_rep,mad_de_p,condper,caja,cajai,memoria_global,ofasres,ofasat);
         break;
     }

@@ -5,11 +5,12 @@
 #include "FuncCompSim.cuh"
 #include "../MISC/FuncCompDeSimulacionMisc.h"
 
-void RattlePos(uint max_it,uint n_esp_m,uint np,uint max_p_en_esp_mr,uint *n_p_esp_m,uint *n_m_esp_mr,uint *p_en_m,uint3 *mad_de_p,int3 condper,double tol,double dt,double *pos,double *q_rat,double *dis_p_esp_mr_rep,double3 caja,double3 cajai)
+void RattlePos(float m_it,uint n_esp_m,uint np,uint max_p_en_esp_mr,uint *n_p_esp_m,uint *n_m_esp_mr,uint *p_en_m,uint3 *mad_de_p,int3 condper,float tol,double dt,double *pos,double *q_rat,double *dis_p_esp_mr_rep,double3 caja,double3 cajai)
 {
     double dis,dif=0.,d_max=0.,grr=0.,srij=0.;
     uint mol=0,part=0;
     double3 dx;
+    uint max_it = m_it;
     for(uint it=0;it<max_it;it++){
         mol=0;
         //Desde aquí
@@ -62,11 +63,12 @@ void RattlePos(uint max_it,uint n_esp_m,uint np,uint max_p_en_esp_mr,uint *n_p_e
     
 }
 
-void RattleVel(uint max_it,uint n_esp_m,uint max_p_en_esp_mr,uint *n_p_esp_m,uint *n_m_esp_mr,uint *p_en_m,uint3 *mad_de_p,double tol,double *pos,double *vel,double *dis_p_esp_mr_rep)
+void RattleVel(float m_it,uint n_esp_m,uint max_p_en_esp_mr,uint *n_p_esp_m,uint *n_m_esp_mr,uint *p_en_m,uint3 *mad_de_p,float tol,double *pos,double *vel,double *dis_p_esp_mr_rep)
 {
     uint mol=0,part;
     double d_max=0.,dot,ka=0.;
     double3 dx;
+    uint max_it=m_it;
     for(uint it=0;it<max_it;it++){
         mol=0;
         for(uint emol=0;emol<n_esp_m;emol++){

@@ -82,9 +82,9 @@ __global__ void AceleracionesFuerzas(uint n_esp_p,uint pot,uint np,uint3 *m_de_p
     
 }
 
-void Simulacion(uint nc,uint ncp,uint nhilos,uint np,uint nparam,uint pot,uint n_esp_p,uint n_esp_m,uint max_p_en_esp_mr,uint ensamble,uint termos,uint max_it,
-                uint3 *mad_de_p,uint *esp_de_p,uint *n_m_esp_mr,uint *n_p_esp_m,uint *M_int,uint *p_en_m,int maxhilos,bool vibrante,
-                size_t memoria_global,double dt,double dens,double kres,double temp_d,double param_termo,double tol,double *param,double *pos,double *q_rat,double *vel,
+void Simulacion(uint nc,uint ncp,uint nhilos,uint np,uint nparam,uint pot,uint n_esp_p,uint n_esp_m,uint max_p_en_esp_mr,uint ensamble,uint termos,
+                uint3 *mad_de_p,uint *esp_de_p,uint *n_m_esp_mr,uint *n_p_esp_m,uint *M_int,uint *p_en_m,int maxhilos,bool vibrante,bool p_o_m,
+                size_t memoria_global,float *constr,double dt,double dens,double temp_d,double param_termo,double *param,double *pos,double *q_rat,double *vel,
                 double *acel,double *dis_p_esp_mr_rep,int3 condper,double3 caja, double3 cajai,std::ofstream &ofasres,std::ofstream &ofasat)
 {
     int ncc=nc*ncp/100.0;
@@ -165,24 +165,26 @@ void Simulacion(uint nc,uint ncp,uint nhilos,uint np,uint nparam,uint pot,uint n
 
     //Aqui podria considerar ponerlo en un stream para que se haga est la copia de la aceleraciones y el calculo de energia al mismo tiempo, ya que no dependen los porcesos uno de los otros
     Errorcuda(cudaMemcpy(acel,d_acel,sizeof(double)*nd*np,cudaMemcpyDeviceToHost),"a",2);
-    if(max_p_en_esp_mr-1)PotencialesDeRestriccion(n_esp_m,max_p_en_esp_mr,n_m_esp_mr,n_p_esp_m,p_en_m,condper,mad_de_p,kres,pos,acel,dis_p_esp_mr_rep,caja,cajai);
     Reduccionconwarps<1024><<<1,1024>>>(d_eit,np,1);//Cuando es energia es true/1 calcula energia potencial, cuando es false/0 calcula la cinetica
     Errorcuda(cudaMemcpy(h_eit,d_eit,sizeof(double),cudaMemcpyDeviceToHost),"eit",2);
+    eit=0.;
+    if(p_o_m&&vibrante)
+        eit+=PotencialesDeRestriccion(n_esp_m,max_p_en_esp_mr,n_m_esp_mr,n_p_esp_m,p_en_m,condper,mad_de_p,constr[0],pos,acel,dis_p_esp_mr_rep,caja,cajai);
     
-    eit=h_eit[0]/2.0;
+    eit+=h_eit[0]/2.0;
     ect=CalculoEnergiaCinetica(np,vel);
     temp= ect/nd;
     ect=ect/2.0;
     ett = ect + eit;
-
-    std::cout << "ett,ect,eit,temp " << ett << " " << ect << " " <<eit << " " << temp << std::endl;
     
     ti=clock();
     std::cout << " " << std::endl;
     std::cout << "Resultados parciales" << std::endl;
     std::cout << "ic,temp,dens,ett,ect,eit,dtt " << std::endl;
+    std::cout << ic<< " "<< temp<< " "<< dens<< " "<< ett<<" "<< ect << " "<< eit << " 0.0" <<std::endl;
     ofasres << "Resultados parciales" << std::endl;
     ofasres << "ic,temp,dens,ett,ect,eit,dtt " << std::endl;
+    ofasres << ic<< " "<< temp<< " "<< dens<< " "<< ett<<" "<< ect << " "<< eit << " 0.0" <<std::endl;
     eis=ns=0;
     ofasat << "ip,p[],v[],a[]"<< std::endl;
     
@@ -198,7 +200,8 @@ void Simulacion(uint nc,uint ncp,uint nhilos,uint np,uint nparam,uint pot,uint n
                 q_rat[id+ip*nd] =(vel[id+ip*nd] + acel[id+nd*ip]*dt*0.5);
 
         //aquí se hace el algoritmo de RATTLE
-        if(!vibrante&&(max_p_en_esp_mr-1))RattlePos(max_it,n_esp_m,np,max_p_en_esp_mr,n_p_esp_m,n_m_esp_mr,p_en_m,mad_de_p,condper,tol,dt,pos,q_rat,dis_p_esp_mr_rep,caja,cajai);
+        if(!vibrante&&p_o_m)
+            RattlePos(constr[1],n_esp_m,np,max_p_en_esp_mr,n_p_esp_m,n_m_esp_mr,p_en_m,mad_de_p,condper,constr[0],dt,pos,q_rat,dis_p_esp_mr_rep,caja,cajai);
 
         for(ip=0; ip<np; ip++){   
             
@@ -226,12 +229,13 @@ void Simulacion(uint nc,uint ncp,uint nhilos,uint np,uint nparam,uint pot,uint n
         AceleracionesFuerzas<<<blockspergrid,threadsperblock>>>(n_esp_p,pot,np,d_mad_de_p,d_esp_de_p,d_M_int,d_pos,chp,d_M_param,caja,cajai,condper,d_eit,d_acel,nconf);
         Errorcuda(cudaGetLastError(),"PLJ",3);
         Errorcuda(cudaMemcpy(acel,d_acel,sizeof(double)*nd*np,cudaMemcpyDeviceToHost),"a",2);
-        if((max_p_en_esp_mr-1)&&vibrante)PotencialesDeRestriccion(n_esp_m,max_p_en_esp_mr,n_m_esp_mr,n_p_esp_m,p_en_m,condper,mad_de_p,kres,pos,acel,dis_p_esp_mr_rep,caja,cajai);    
+        eit=0.;
+        if(p_o_m&&vibrante)
+            eit+=PotencialesDeRestriccion(n_esp_m,max_p_en_esp_mr,n_m_esp_mr,n_p_esp_m,p_en_m,condper,mad_de_p,constr[0],pos,acel,dis_p_esp_mr_rep,caja,cajai);    
         Velocidades(np,vel,acel,dt);
         //debido a que se necesitan F(t+dt) entonces RATTLEvel se realiza aquí
-        if(!vibrante&&(max_p_en_esp_mr-1)){
-            RattleVel(max_it,n_esp_m,max_p_en_esp_mr,n_p_esp_m,n_m_esp_mr,p_en_m,mad_de_p,tol,pos,vel,dis_p_esp_mr_rep);
-        }
+        if(!vibrante&&p_o_m)
+            RattleVel(constr[1],n_esp_m,max_p_en_esp_mr,n_p_esp_m,n_m_esp_mr,p_en_m,mad_de_p,constr[0],pos,vel,dis_p_esp_mr_rep);
         
         if(ensamble==1){
             ect = CalculoEnergiaCinetica(np,vel);
@@ -257,16 +261,16 @@ void Simulacion(uint nc,uint ncp,uint nhilos,uint np,uint nparam,uint pot,uint n
             dtt =((double)(tf - ti))/CLOCKS_PER_SEC;
             Reduccionconwarps<1024><<<1,1024>>>(d_eit,np,1);
             Errorcuda(cudaMemcpy(h_eit,d_eit,sizeof(double),cudaMemcpyDeviceToHost),"eit",2);
-            eit=h_eit[0]/2.0;
+            eit+=h_eit[0]/2.0;
             ett = ect + eit;
             ect = CalculoEnergiaCinetica(np,vel);
             temp = ect/nd;
             ect=ect/2.0;
 
-            ets = ets + ett;
-            ecs = ecs + ect;
-            eis = eis + eit;
-            temps = temps + temp;
+            ets += ett;
+            ecs += ect;
+            eis += eit;
+            temps += temp;
             ns++;
 
             std::cout << ic<< " "<< temp<< " "<< dens<< " "<< ett<<
@@ -279,11 +283,24 @@ void Simulacion(uint nc,uint ncp,uint nhilos,uint np,uint nparam,uint pot,uint n
             IAaD(np,ofasat,pos,vel,acel);
         }
     }
+
     Reduccionconwarps<1024><<<1,1024>>>(d_eit,np,1);
     Errorcuda(cudaMemcpy(h_eit,d_eit,sizeof(double),cudaMemcpyDeviceToHost),"eit",2);
+    eit=h_eit[0]/2.0;
+    ett = ect + eit;
+    ect = CalculoEnergiaCinetica(np,vel);
+    temp = ect/nd;
+    ect=ect/2.0;
+
+    std::cout << ic<< " "<< temp<< " "<< dens<< " "<< ett<<
+    " "<< ect << " "<< eit << " " << dtt <<std::endl;
+
+    ofasres << ic<< " "<< temp<< " "<< dens<< " "<< ett<<
+    " "<< ect << " "<< eit << " " << dtt <<std::endl;
+
     ets += ett;
     ecs += ect;
-    eis += h_eit[0]/2.0;
+    eis += eit;
     temps += temp;
     ns++;
 
