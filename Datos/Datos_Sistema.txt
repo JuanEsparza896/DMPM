@@ -1,4 +1,4 @@
-1 nem
-1 nea
-8000 nme[0]
-1 naem[0]
+n_esp_m     1
+n_esp_p     1
+n_m_esp_mr  10000
+n_p_esp_m   1

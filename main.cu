@@ -41,7 +41,6 @@ int main()
     
     double dens;            //densidad
     double temp;            //caso NVT temperatura del baño
-    double v0;              //rapidez maxima inicial de las particulas
     double3 caja;           //tamano de la caja de simulacion
     uint n_esp_m;           //numero de especies moleculares
     uint n_esp_p;           //numero de especies de particulas
@@ -60,11 +59,11 @@ int main()
     uint *n_p_esp_m;        //numero de particulas en cierta especie molecular
     uint max_p_en_esp_mr;   //maximo de los valores de n_p_esp_m
     uint *esp_p_en_esp_mr;  //especie de las particulas
-    uint *M_int_int;        //matriz de interacciones internas
-    uint *p_en_m;           //nos indica la primera particula dentro de cierta molecula 
-    double kres;            //constante de union entre atomos pertenecientes a una molecula
-    uint max_it;            //númmero de iteraciones máximas para el algoritmo de RATTLE
-    double tol;             //toleracia para el algoritmo de RATTLE
+    uint *p_en_m;           //nos indica la primera particula dentro de cierta molecula
+    float *constr;          /*
+                                Este arreglo puede contener 1 elemento si las constricciones son resortes (Constante elastica)
+                                o 2 elementos si el algoritmo de constricciòn es rìgido RATTLE (tolerancia y máximas iteraciones)
+                            */
     /***********************************************************************/
     //Datos de atomos
 
@@ -81,6 +80,7 @@ int main()
     
     //temporales
     uint arr_temp=0;
+    uint n_par_const=0;
 
     /*******************************************************************************************************************
     Notas
@@ -103,7 +103,7 @@ int main()
     n_m_esp_mr = new uint[n_esp_m];
     n_p_esp_m = new uint[n_esp_m];
     
-    LeerDatosSistema2(dir,n_esp_m,n_esp_p,n_m_esp_mr,n_p_esp_m,np,nm);
+    LeerDatosSistema2(dir,n_esp_m,n_m_esp_mr,n_p_esp_m,np,nm);
     
     pos=new double[np*nd];
     q_rat=new double[np*nd];
@@ -113,14 +113,15 @@ int main()
     int cvec=0,ccel=0;
     p_o_m = false;
     
-    LeerDatosCorrida(dir,nc,ncp,coord,ensamble,termos,pot,cvec,ccel,nhilos,dt,temp,v0,rc,dens,kres,param_termo,vibrante);
+    LeerDatosCorrida(dir,nc,ncp,coord,ensamble,termos,pot,cvec,ccel,nhilos,dt,temp,rc,dens,param_termo,vibrante);
     
     Nparamelec(nparam,pot);
-    
+    if(vibrante)n_par_const=1;else n_par_const=2;
+    constr = new float[n_par_const];
     opt=cvec+2*ccel;
     param = new double[nparam*n_esp_p];
     
-    LeerDatosAtomos(dir,param,pot,n_esp_p);
+    LeerDatosParticulas(dir,param,pot,n_esp_p);
     
     for(int i=0;i<n_esp_m;i++)
     if(n_p_esp_m[i]>=arr_temp)arr_temp=n_p_esp_m[i];
@@ -131,15 +132,12 @@ int main()
     LeerDatosMoleculas(dir,n_esp_m,coord,n_p_esp_m,esp_p_en_esp_mr,max_p_en_esp_mr,pos_respecto_p_central);
     
     M_int = new uint[n_esp_p*n_esp_p];
-    // el 2 es por que ahora solo hay 2 tipos de potenciales de restriccion: de enlace y de angulo, el numero sera 3 cuando se agregue torsion o 4 cuando agregue diedro, etc
-    M_int_int = new uint[2*n_esp_m];
     
     LeerDatosInteraccion(dir,n_esp_p,M_int);
-    LeerDatosInteraccionInterna(dir,n_esp_m,M_int_int);
-    if(vibrante)LeerDatosRATTLE(dir,tol,max_it);
+    LeerDatosConstriccion(dir,vibrante,constr);
     AbrirArchivos(dir,dens,n_esp_m,n_esp_p,pot,n_m_esp_mr,ensamble,termos,nc,param_termo,param,ofaedi,ofapin,dpsco,vibrante);
-    ImpresionDeDatos(nc,ncp,dt,temp,v0,rc,cvec,ccel,pot,dens,n_esp_m,n_esp_p,ensamble,termos,n_m_esp_mr,n_p_esp_m,esp_p_en_esp_mr,max_p_en_esp_mr,pos_respecto_p_central);
-    ImpresionDeDatosADisco(nc,ncp,dt,temp,v0,rc,cvec,ccel,pot,dens,n_esp_m,n_esp_p,ensamble,termos,n_m_esp_mr,n_p_esp_m,esp_p_en_esp_mr,max_p_en_esp_mr,pos_respecto_p_central,ofaedi);
+    ImpresionDeDatos(nc,ncp,dt,temp,rc,cvec,ccel,pot,dens,n_esp_m,n_esp_p,ensamble,termos,n_m_esp_mr,n_p_esp_m,esp_p_en_esp_mr,max_p_en_esp_mr,pos_respecto_p_central);
+    ImpresionDeDatosADisco(nc,ncp,dt,temp,rc,cvec,ccel,pot,dens,n_esp_m,n_esp_p,ensamble,termos,n_m_esp_mr,n_p_esp_m,esp_p_en_esp_mr,max_p_en_esp_mr,pos_respecto_p_central,ofaedi);
     celda_min=CreandoCeldaMinima(n_esp_m,pos_respecto_p_central,max_p_en_esp_mr,param,pot,esp_p_en_esp_mr,n_p_esp_m);
     
     double *centrar_m = new double[nd*n_esp_m];

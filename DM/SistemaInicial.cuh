@@ -18,67 +18,145 @@ using str=std::string;
 void LeerDatosSistema1(str dir,uint &n_esp_m,uint &n_esp_p)
 {
     str f=dir+"/Datos/Datos_Sistema.txt";
-    str temp;
     std::ifstream iff(f);
     PAbrioArchivo(f,iff);
-    iff >> n_esp_m; iff >> temp;
-    iff >> n_esp_p; iff >> temp;
+    str line;
+    while (std::getline(iff,line)){
+        std::istringstream iss(line);
+        str temp;
+        if(line.find("n_esp_m") != str::npos){
+            uint val;
+            iss >> temp >> val;
+            n_esp_m = val;
+        }else if(line.find("n_esp_p") != str::npos){
+            uint val;
+            iss >> temp >> val;
+            n_esp_p = val;
+        }
+    }
+
     iff.close();
 }
-void LeerDatosSistema2(str dir,uint n_esp_m,uint n_esp_p,uint *n_m_esp_mr,uint *n_p_esp_m,uint &np,uint &nm)
+void LeerDatosSistema2(str dir,uint n_esp_m,uint *n_m_esp_mr,uint *n_p_esp_m,uint &np,uint &nm)
 {
     str f=dir+"/Datos/Datos_Sistema.txt";
     str temp;
     uint imp;
+    np=nm=0;
     std::ifstream iff(f);
     PAbrioArchivo(f,iff);
-    iff >> imp; iff >> temp;
-    iff >> imp; iff >> temp;
-    np=nm=0;
-    for(int i=0;i< n_esp_m;i++){
-        iff >> imp; iff >> temp;
-        n_m_esp_mr[i]=imp;
-        nm+=imp;
+    str line;
+
+    while (std::getline(iff,line)){
+        std::istringstream iss(line);
+        
+        iss >> temp;
+
+        if(temp == "n_m_esp_mr"){
+            for(uint i=0;i<n_esp_m;i++){
+                if(!(iss >>n_m_esp_mr[i])){
+                    std::cerr << "Error al leer n_m_esp_mr" << std::endl;
+                    break;
+                    exit(EXIT_FAILURE);
+                }
+            }
+        }else if(temp == "n_p_esp_m"){
+            for(uint i=0;i<n_esp_m;i++){
+                if(!(iss >>n_p_esp_m[i])){
+                    std::cerr << "Error al leer n_p_esp_m" << std::endl;
+                    break;
+                    exit(EXIT_FAILURE);
+                }
+            }
+        }
     }
-    for(int i=0;i< n_esp_m;i++){
-        iff >> imp; iff >> temp;
-        n_p_esp_m[i]=imp;
-        np+=n_m_esp_mr[i]*imp;
-    }
+
+    for(int i=0;i< n_esp_m;i++)
+        nm+=n_m_esp_mr[i];
+    for(int i=0;i< n_esp_m;i++)
+        np+=n_m_esp_mr[i]*n_p_esp_m[i];
+
     iff.close();
 }
-void LeerDatosCorrida(str dir,uint &nc,uint &ncp,uint &coord,uint &ensamble,uint &termos,uint &pot,int &cvec,int &ccel,int &nhilos,double &dt,double &temp,double &v0,double &rc,double &dens,double &kres,double &param_termo,bool &vibrante)
+void LeerDatosCorrida(str dir,uint &nc,uint &ncp,uint &coord,uint &ensamble,uint &termos,uint &pot,int &cvec,int &ccel,int &nhilos,double &dt,double &temp,double &rc,double &dens,double &param_termo,bool &vibrante)
 {
     str f=dir+"/Datos/Datos_Corrida.txt";
     str tp;
     std::ifstream iff(f);
-    uint tmp;
     PAbrioArchivo(f,iff);
-    iff >> nc;          iff >> tp;
-    iff >> ncp;         iff >> tp;
-    iff >> dt;          iff >> tp;
-    iff >> temp;        iff >> tp;
-    iff >> v0;          iff >> tp;
-    iff >> rc;          iff >> tp;
-    iff >> dens;        iff >> tp;
-    iff >> pot;         iff >> tp;
-    iff >> nhilos;      iff >> tp;
-    iff >> cvec;        iff >> tp;
-    iff >> ccel;        iff >> tp;
-    iff >> coord;       iff >> tp;
-    iff >> ensamble;    iff >> tp;
-    iff >> termos;      iff >> tp;
-    iff >> param_termo; iff >> tp;
-    iff >> tmp;         iff >> tp;
-    if(tmp)vibrante=true;
-    iff >> kres;        iff >> tp;
+    str line;
+    while (std::getline(iff,line)){
+        std::istringstream iss(line);
+        if(line.find("nc") != str::npos){
+            uint val;
+            iss >> tp >> val;
+            nc = val;
+        }else if(line.find("ncp") != str::npos){
+            uint val;
+            iss >> tp >> val;
+            ncp = val;
+        }else if(line.find("dt") != str::npos){
+            double val;
+            iss >> tp >> val;
+            dt = val;
+        }else if(line.find("temp") != str::npos){
+            double val;
+            iss >> tp >> val;
+            temp = val;
+        }if(line.find("dens") != str::npos){
+            double val;
+            iss >> tp >> val;
+            dens = val;
+        }if(line.find("potencial") != str::npos){
+            uint val;
+            iss >> tp >> val;
+            pot = val;
+        }if(line.find("ensamble") != str::npos){
+            uint val;
+            iss >> tp >> val;
+            ensamble = val;
+        }if(line.find("termo") != str::npos){
+            uint val;
+            iss >> tp >> val;
+            termos = val;
+        }if(line.find("p_termo") != str::npos){
+            double val;
+            iss >> tp >> val;
+            param_termo = val;
+        }if(line.find("vibrante") != str::npos){
+            uint val;
+            iss >> tp >> val;
+            if(val)vibrante=true;else vibrante=false;
+        }if(line.find("rc") != str::npos){
+            double val;
+            iss >> tp >> val;
+            rc = val;
+        }if(line.find("ovec") != str::npos){
+            int val;
+            iss >> tp >> val;
+            cvec = val;
+        }if(line.find("ocel") != str::npos){
+            int val;
+            iss >> tp >> val;
+            ccel = val;
+        }if(line.find("hilosPP") != str::npos){
+            int val;
+            iss >> tp >> val;
+            nhilos = val;
+        }if(line.find("coord") != str::npos){
+            uint val;
+            iss >> tp >> val;
+            coord = val;
+        }
+    }
+
     iff.close();
 }
 
-void LeerDatosAtomos(str dir,double *param,uint pot,uint n_esp_p)
+void LeerDatosParticulas(str dir,double *param,uint pot,uint n_esp_p)
 {
     /*esta rutina asume que siempre el dato que esta en la primera columna de este archivo es el diametro de la especie atomica */
-    str f=dir+"/Datos/Datos_Atomos.txt";
+    str f=dir+"/Datos/Datos_Particulas.txt";
     str tp;
     uint nparam;
     Nparamelec(nparam,pot);
@@ -105,6 +183,7 @@ void LeerDatosMoleculas(str dir,uint n_esp_m,uint coord,uint *n_p_esp_m,uint *es
     iff >> tp;iff >> tp;iff >> tp;
     for(int i=0;i<n_esp_m;i++){
         iff >> tui;
+        if(tui != i){ std::cerr << "Los Datos no fueron bien introducidos, todavia faltan los datos de las particulas de la especie" << i << std::endl;}
         for(int j=0;j<n_p_esp_m[i];j++){
             iff >> tui;
             esp_p_en_esp_mr[max_p_en_esp_mr*i+j]=tui;
@@ -146,41 +225,42 @@ void LeerDatosInteraccion(str dir,uint n_esp_p,uint *M_int)
     iff.close();
 }
 
-void LeerDatosRATTLE(str dir,double &tol,uint &max_it)
+void LeerDatosConstriccion(str dir,bool vibrante,float *constr)
 {
     /*esta rutina asume que siempre el dato que esta en la primera columna de este archivo es el diametro de la especie atomica */
-    str f=dir+"/Datos/Datos_RATTLE.txt";
-    str tp;
+    str f=dir+"/Datos/Datos_Constricciones.txt";
+    str line;
     std::ifstream iff(f);
     PAbrioArchivo(f,iff);
-    iff >> tol;iff >> tp;
-    iff >> max_it;iff >> tp;
+    if(vibrante){
+        while (std::getline(iff,line)){
+            std::istringstream iss(line);
+            str temp;
+            if(line.find("kres") != str::npos){
+                float val;
+                iss >> temp >> val;
+                constr[0] = val;
+            }
+        }
+    }else{
+        while (std::getline(iff,line)){
+            std::istringstream iss(line);
+            str temp;
+            if(line.find("tol") != str::npos){
+                float val;
+                iss >> temp >> val;
+                constr[0] = val;
+            }else if(line.find("maxit") != str::npos){
+                float val;
+                iss >> temp >> val;
+                constr[1] = val;
+            }
+        }
+    }
+    
     iff.close();
 }
 
-void LeerDatosInteraccionInterna(str dir,uint n_esp_m,uint *M_int_int)
-{
-    //!Esta rutina por ahora no sirve pues solo hay constricciones y restricciones de distancia entre
-    //!todas las particulas que componen una molécula, despues se elige que particulas si enteractuan entre si o no
-    str f=dir+"/Datos/InteraccionInterna.txt";
-    str tp;
-    std::ifstream iff(f);
-    uint tmp;
-    PAbrioArchivo(f,iff);
-    printf("Interaccion de especies moleculares:\n");
-    for(int i=0;i<n_esp_m;i++)
-    {
-        printf("Especie %d ",i);
-        for(int j=0;j<2;j++)
-        {
-            iff >> tmp;
-            M_int_int[n_esp_m*i+j]=tmp;
-            printf("Interaccion %d: ",j);
-            if(tmp)printf("Activa\n"); else printf("Inactiva\n"); 
-        }
-    }
-    iff.close();
-}
 void AbrirArchivos(str directorio,double dens, uint nem, uint nea,uint pot, uint *nme,uint ensamble,uint termo,uint nc,double param_termo, double *param,std::ofstream &ofaedi,std::ofstream &ofapin,str &dpsco,bool vibrante)
 {
     /*****************************************/
@@ -261,7 +341,7 @@ void AbrirArchivos(str directorio,double dens, uint nem, uint nea,uint pot, uint
     ofapin.open(apin.c_str());
 }
 
-void ImpresionDeDatos(int nc,int ncp,double dt,double temp,double v0,double rc,bool optvec,
+void ImpresionDeDatos(int nc,int ncp,double dt,double temp,double rc,bool optvec,
                       bool optcel,uint pot,double dens,uint n_esp_m,uint especies_atomicas,
                       uint ensamble,uint termos,uint *m_de_esp_mr,uint *p_en_esp_mr, 
                       uint *esp_de_p_en_m,uint max_p_en_esp_mr,double3 *pos_respecto_p_central)
@@ -294,7 +374,6 @@ void ImpresionDeDatos(int nc,int ncp,double dt,double temp,double v0,double rc,b
             break;
         }
     }
-    printf("Rapidez inicial maxima de las particulas: %.1lf\n",v0);
     printf("Radio de corte (en caso de optimizaciones): %.1lf\n",rc);
     printf("Optimizacion de vecinos: ");
     if(optvec)printf("Activa\n");else{printf("Inactiva\n");}
@@ -323,7 +402,7 @@ void ImpresionDeDatos(int nc,int ncp,double dt,double temp,double v0,double rc,b
     printf("\n---------------------------------------------------------------------------\n\n");
 }
 
-void ImpresionDeDatosADisco(int nc,int ncp,double dt,double temp,double v0,double rc,bool optvec,
+void ImpresionDeDatosADisco(int nc,int ncp,double dt,double temp,double rc,bool optvec,
                             bool optcel,uint pot,double dens,uint n_esp_m,uint n_esp_p,uint ensamble,
                             uint termos,uint *m_de_esp_mr,uint *p_en_esp_mr,uint *esp_de_p_en_m,
                             uint max_p_en_esp_mr,double3 *pos_respecto_p_central,std::ofstream &ofaedi)
@@ -358,7 +437,6 @@ void ImpresionDeDatosADisco(int nc,int ncp,double dt,double temp,double v0,doubl
         }
     }
     
-    ofaedi << "Rapidez inicial maxima de las particulas:" << std::setprecision(2) << v0 << "\n";
     ofaedi << "Radio de corte (en caso de optimizaciones):" << std::setprecision(2) << rc << "\n";
     ofaedi << "Optimizacion de vecinos: ";
     if(optvec)ofaedi << "Activa\n"; else{ofaedi << "Inactiva\n";}
