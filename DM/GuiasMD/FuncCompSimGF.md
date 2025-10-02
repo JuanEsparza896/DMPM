@@ -21,7 +21,7 @@ Toma un arreglo en memoria global y usa algoritmos de reducción en paralelo (su
 
 El arreglo se guarda en memoria compartida por lo que el kernel utilizan un bloque para la ejecución, el parámetro de template se usa para asignar el número de hilos del bloque.
 
-Información extra
+Información extra:
 
 https://developer.nvidia.com/blog/faster-parallel-reductions-kepler/
 https://developer.nvidia.com/blog/using-cuda-warp-level-primitives/
@@ -43,4 +43,66 @@ Parámetros:
 
 Descripción:
 
-Toma la posición de una partícula y encuentra las coordenadas de su imagen que están dentro de la caja de simulación.  
+Toma la posición de una partícula y encuentra las coordenadas de su imagen que están dentro de la caja de simulación.
+
+Información extra:
+
+https://computecanada.github.io/molmodsim-md-theory-lesson-novice/04-Periodic_Boundary/index.html
+
+## Funcion Discuad
+
+Tipo de función: double
+
+Ejecución: CPU o GPU
+
+Parámetros:
+
+* double3 var: un vector de 3 dimensiones.
+
+Descripción:
+
+Toma un vector en 3 dimensiones y te devuelve su norma al cuadrado.
+
+Información extra:
+
+NA
+
+## Funcion CalculoEnergiaCinetica
+
+Tipo de función: double
+
+Ejecución: CPU
+
+Parámetros:
+
+* uint np: número de partículas en el sistema.
+* double *vel: arreglo con las componentes de la velocidad de cada partícula.
+
+Descripción:
+
+Calcula la energía cinética instantanea por partícula del sistema.
+
+Información extra:
+
+NA
+
+## Funcion Velocidades
+
+Tipo de función: void
+
+Ejecución: CPU
+
+Parámetros:
+
+* uint np: número de partículas.
+* double *vel: arreglo con las componentes de la velocidad de cada partícula
+* double *acel: arreglo con las componentes de la aceleración de cada partícula
+* double dt: tamaño del paso de integración.
+
+Descripción:
+
+Algoritmo para obtener las velocidades de una partícula con velocity Verlet.
+
+Información extra:
+
+https://es.wikipedia.org/wiki/Integraci%C3%B3n_de_Verlet
